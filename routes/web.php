@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\AuditController;
 
 
 // Global route patterns
@@ -114,4 +115,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
     Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
     Route::patch('/users/{id}/status', [UserController::class, 'updateStatus'])->name('admin.users.status');
+
+    // Audit trail
+    Route::get('/audit', [AuditController::class, 'index'])
+        ->name('admin.audit.index');
 });

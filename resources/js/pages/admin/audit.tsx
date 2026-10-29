@@ -1,0 +1,425 @@
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { Link, router, usePage } from "@inertiajs/react";
+import AdminLayout from "@/layouts/admin-layout"; // your existing admin shell
+
+type Filters = {
+    q: string;
+    from: string;
+    to: string;
+    action: string;
+    entity_type: string;
+    user_id: string;
+};
+
+type AuditRow = {
+    audit_id: number;
+    action_label: string;
+    entity_type: string | null;
+    entity_id: number | null;
+    reference_no: string | null;
+    title: string | null;
+    full_name: string | null;
+    username: string | null;
+    role: string | null;
+    ip_address: string | null;
+    created_at: string | null;
+    details: string;
+};
+
+type Paginated<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+type Props = {
+    logs: Paginated<AuditRow>;
+    filters: Filters;
+    actions: Record<string, string>;
+    users: { id: number; name: string }[];
+    today: string;
+};
+
+const COLS = 6;
+const EMPTY: Filters = {
+    q: "",
+    from: "",
+    to: "",
+    action: "",
+    entity_type: "",
+    user_id: "",
+};
+
+const fmt = (s: string | null) =>
+    s
+        ? new Date(String(s).replace(" ", "T")).toLocaleString("en-PH", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+          })
+        : "—";
+
+function validateDates({ from, to }: Filters, today: string): string {
+    if (from > today || to > today)
+        return "Future dates cannot be selected. Please choose today or an earlier date.";
+    if (from && to && from > to)
+        return "The start date must be on or before the end date.";
+    return "";
+}
+
+function RecordCell({ r }: { r: AuditRow }) {
+    if (r.entity_type === "complaints" && r.entity_id) {
+        return (
+            <>
+                <Link
+                    className="font-semibold text-[var(--green)] hover:underline"
+                    href={`/admin/complaints/${r.entity_id}`}
+                >
+                    {r.reference_no || `Complaint #${r.entity_id}`}
+                </Link>
+                {r.title && (
+                    <p
+                        className="text-xs text-slate-500 max-w-xs truncate"
+                        title={r.title}
+                    >
+                        {r.title}
+                    </p>
+                )}
+            </>
+        );
+    }
+    if (r.entity_type === "users" && r.entity_id) {
+        return (
+            <Link
+                className="text-[var(--green)] hover:underline"
+                href="/admin/users"
+            >
+                User #{r.entity_id}
+            </Link>
+        );
+    }
+    if (r.entity_type === "email_settings") {
+        return (
+            <Link
+                className="text-[var(--green)] hover:underline"
+                href="/admin/email-settings"
+            >
+                Email settings
+            </Link>
+        );
+    }
+    return <span className="text-slate-400">—</span>;
+}
+
+export default function Audit({ logs, filters, actions, users, today }: Props) {
+    const { errors } = usePage<{ errors: Record<string, string> }>().props;
+    const [form, setForm] = useState<Filters>({ ...EMPTY, ...filters });
+    const [loading, setLoading] = useState(false);
+    const [dateError, setDateError] = useState("");
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(
+        () => () => {
+            if (timer.current) clearTimeout(timer.current);
+        },
+        [],
+    );
+
+    const visit = (next: Filters, page = 1) => {
+        const params: Record<string, string | number> = Object.fromEntries(
+            Object.entries(next).filter(([, v]) => v !== ""),
+        );
+        if (page > 1) params.page = page;
+        router.get("/admin/audit", params, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ["logs", "filters", "errors"],
+            onStart: () => setLoading(true),
+            onFinish: () => setLoading(false),
+        });
+    };
+
+    const change = (key: keyof Filters, value: string) => {
+        const next = { ...form, [key]: value };
+        setForm(next);
+        const msg = validateDates(next, today);
+        setDateError(msg);
+        if (msg) return;
+        if (timer.current) clearTimeout(timer.current);
+        if (key === "q") timer.current = setTimeout(() => visit(next), 350);
+        else visit(next);
+    };
+
+    const onInput =
+        (key: keyof Filters) =>
+        (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+            change(key, e.target.value);
+
+    const clear = () => {
+        if (timer.current) clearTimeout(timer.current);
+        setForm(EMPTY);
+        setDateError("");
+        visit(EMPTY);
+    };
+
+    const error = dateError || errors?.from || errors?.to || "";
+
+    return (
+        <AdminLayout title="Audit Trail">
+            <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
+                <p className="text-sm text-slate-600">
+                    Review who did what in the system: sign-ins, complaint
+                    changes, account updates, reports, and email settings.
+                </p>
+
+                <div className="relative max-w-md">
+                    <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                    <label htmlFor="q" className="sr-only">
+                        Search
+                    </label>
+                    <input
+                        type="search"
+                        id="q"
+                        className="field pl-10"
+                        placeholder="Search user, action, or complaint reference"
+                        value={form.q}
+                        onChange={onInput("q")}
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+                    <div>
+                        <label className="lbl" htmlFor="f_from">
+                            From
+                        </label>
+                        <input
+                            type="date"
+                            id="f_from"
+                            className="field"
+                            value={form.from}
+                            max={form.to || today}
+                            onChange={onInput("from")}
+                        />
+                    </div>
+                    <div>
+                        <label className="lbl" htmlFor="f_to">
+                            To
+                        </label>
+                        <input
+                            type="date"
+                            id="f_to"
+                            className="field"
+                            value={form.to}
+                            min={form.from || undefined}
+                            max={today}
+                            onChange={onInput("to")}
+                        />
+                    </div>
+                    <div>
+                        <label className="lbl" htmlFor="f_action">
+                            Action
+                        </label>
+                        <select
+                            id="f_action"
+                            className="field"
+                            value={form.action}
+                            onChange={onInput("action")}
+                        >
+                            <option value="">All actions</option>
+                            {Object.entries(actions).map(([code, label]) => (
+                                <option key={code} value={code}>
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="lbl" htmlFor="f_entity">
+                            Record type
+                        </label>
+                        <select
+                            id="f_entity"
+                            className="field"
+                            value={form.entity_type}
+                            onChange={onInput("entity_type")}
+                        >
+                            <option value="">All types</option>
+                            <option value="complaints">Complaints</option>
+                            <option value="users">Users</option>
+                            <option value="email_settings">
+                                Email settings
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="lbl" htmlFor="f_user">
+                            User
+                        </label>
+                        <select
+                            id="f_user"
+                            className="field"
+                            value={form.user_id}
+                            onChange={onInput("user_id")}
+                        >
+                            <option value="">All users</option>
+                            {users.map((u) => (
+                                <option key={u.id} value={String(u.id)}>
+                                    {u.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <button
+                        type="button"
+                        onClick={clear}
+                        className="text-sm text-slate-500 hover:text-slate-800 underline"
+                    >
+                        Clear filters
+                    </button>
+                </div>
+            </section>
+
+            {error && (
+                <div
+                    role="alert"
+                    className="rounded-2xl bg-red-50 border border-red-200 px-5 py-3 text-red-700 text-sm"
+                >
+                    {error}
+                </div>
+            )}
+
+            <section className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto" aria-busy={loading}>
+                    <table className="w-full text-sm">
+                        <thead className="bg-slate-50">
+                            <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
+                                {[
+                                    "When",
+                                    "User",
+                                    "Action",
+                                    "Record",
+                                    "Details",
+                                    "IP address",
+                                ].map((h) => (
+                                    <th
+                                        key={h}
+                                        className="py-3 px-4 font-semibold"
+                                    >
+                                        {h}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                Array.from({ length: 4 }, (_, i) => (
+                                    <tr key={i}>
+                                        <td colSpan={COLS} className="p-3">
+                                            <div className="skeleton h-6 rounded" />
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : logs.data.length ? (
+                                logs.data.map((r) => (
+                                    <tr
+                                        key={r.audit_id}
+                                        className="border-b border-slate-100 hover:bg-slate-50 align-top"
+                                    >
+                                        <td className="py-3 px-4 whitespace-nowrap text-xs text-slate-500">
+                                            {fmt(r.created_at)}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {r.full_name || r.username ? (
+                                                <>
+                                                    <p className="font-medium">
+                                                        {r.full_name ||
+                                                            r.username}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400">
+                                                        {r.username || ""}
+                                                        {r.role
+                                                            ? " · " +
+                                                              r.role.replace(
+                                                                  "_",
+                                                                  " ",
+                                                              )
+                                                            : ""}
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <span className="text-slate-400">
+                                                    Unknown
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 whitespace-nowrap">
+                                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                                {r.action_label}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <RecordCell r={r} />
+                                        </td>
+                                        <td className="py-3 px-4 text-slate-600 max-w-sm text-xs break-words">
+                                            {r.details || "—"}
+                                        </td>
+                                        <td className="py-3 px-4 whitespace-nowrap text-xs text-slate-500">
+                                            {r.ip_address || "—"}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td
+                                        colSpan={COLS}
+                                        className="py-12 text-center text-slate-400"
+                                    >
+                                        No audit entries match these filters.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 text-sm text-slate-500">
+                    <p>
+                        {logs.total
+                            ? `Showing ${logs.from}–${logs.to} of ${logs.total.toLocaleString()} entries`
+                            : "0 entries"}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            disabled={logs.current_page <= 1}
+                            onClick={() => visit(form, logs.current_page - 1)}
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40"
+                        >
+                            Previous
+                        </button>
+                        <span>
+                            Page {logs.current_page} of {logs.last_page}
+                        </span>
+                        <button
+                            type="button"
+                            disabled={logs.current_page >= logs.last_page}
+                            onClick={() => visit(form, logs.current_page + 1)}
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </AdminLayout>
+    );
+}

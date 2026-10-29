@@ -6,17 +6,53 @@ use Illuminate\Database\Eloquent\Model;
 
 class AuditLog extends Model
 {
+    protected $table = 'audit_logs';
     protected $primaryKey = 'audit_id';
-    const UPDATED_AT = null;             // only created_at exists
-    protected $guarded = [];
+    public $timestamps = false;
 
     protected $casts = [
-        'old_values' => 'array',         // JSON column becomes a PHP array
         'new_values' => 'array',
     ];
 
-    public function user()
+    /** Flatten new_values into "Label: value · Label: value" (max 120 chars per value). */
+    public function detailsText(): string
     {
-        return $this->belongsTo(User::class, 'user_id', 'user_id');
+        $data = $this->new_values;
+        if (!is_array($data) || $data === []) {
+            return '';
+        }
+
+        $parts = [];
+        foreach ($data as $key => $value) {
+            $text = self::stringify($value);
+            if ($text === '') {
+                continue;
+            }
+            $label = ucfirst(str_replace('_', ' ', (string) $key));
+            $parts[] = $label . ': ' . mb_substr($text, 0, 120);
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    private static function stringify(mixed $value): string
+    {
+        if (is_array($value)) {
+            $items = [];
+            foreach ($value as $key => $item) {
+                $text = self::stringify($item);
+                if ($text === '') {
+                    continue;
+                }
+                $items[] = is_string($key) ? "$key = $text" : $text;
+            }
+            return implode(', ', $items);
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'yes' : 'no';
+        }
+
+        return (string) $value;
     }
 }

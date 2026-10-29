@@ -46,7 +46,7 @@ const NAV = [
         icon: FileText,
     },
     {
-        href: "/admin/audit-logs",
+        href: "/admin/audit",
         label: "Audit Trail",
         short: "Audit",
         icon: ShieldCheck,
