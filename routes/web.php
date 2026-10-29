@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\StoreComplaintRequest;
 use App\Http\Controllers\Admin\ComplaintShowController;
 use App\Http\Controllers\Admin\ComplaintWorkflow;
 use App\Http\Controllers\Admin\EmailSettingsController;
+use App\Http\Controllers\Admin\OfficeController;
 
 // Login page
 Route::get('/login', [LoginController::class, 'show'])
@@ -55,6 +56,8 @@ Route::middleware('auth')->group(function () {
 
             Route::get('documents/{id}', 'document');
         });
+        // office directory
+        Route::get('/offices', [OfficeController::class, 'index'])->name('admin.offices');
     });
 
     Route::get('admin/email-settings', [EmailSettingsController::class, 'index'])
