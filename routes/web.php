@@ -10,12 +10,15 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\AuditController; 
+use App\Http\Controllers\Auth\PasswordResetController;
 
 
 // Global route patterns
 // {id} only matches numbers (must be declared before the routes that use it)
 Route::pattern('id', '[0-9]+');
+
+Route::redirect('/', '/login');
 
 /*
 |--------------------------------------------------------------------------
@@ -70,6 +73,10 @@ Route::middleware('auth')->group(function () {
     })->name('field.dashboard');
 });
 
+// Password reset
+Route::post('/password/reset', [PasswordResetController::class, 'handle'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('password.reset.handle');
 /*
 |--------------------------------------------------------------------------
 | Admin routes (/admin/*)
