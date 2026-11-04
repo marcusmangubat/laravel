@@ -44,6 +44,8 @@ type Props = {
 };
 
 const COLS = 6;
+const FIELD =
+    "field h-11 w-full min-w-0 border border-slate-300 hover:border-slate-400 focus:border-[var(--green)] focus:outline-none focus:ring-2 focus:ring-[var(--green)]/20";
 const EMPTY: Filters = {
     q: "",
     from: "",
@@ -169,6 +171,7 @@ export default function Audit({ logs, filters, actions, users, today }: Props) {
     };
 
     const error = dateError || errors?.from || errors?.to || "";
+    const hasFilters = Object.values(form).some((v) => v !== "");
 
     return (
         <AdminLayout title="Audit Trail">
@@ -178,56 +181,75 @@ export default function Audit({ logs, filters, actions, users, today }: Props) {
                     changes, account updates, reports, and email settings.
                 </p>
 
-                <div className="relative max-w-md">
-                    <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
-                    <label htmlFor="q" className="sr-only">
-                        Search
-                    </label>
-                    <input
-                        type="search"
-                        id="q"
-                        className="field pl-10"
-                        placeholder="Search user, action, or complaint reference"
-                        value={form.q}
-                        onChange={onInput("q")}
-                    />
+                {/* Row 1: search + clear */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="relative flex-1 sm:max-w-md">
+                        <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                        <label htmlFor="q" className="sr-only">
+                            Search
+                        </label>
+                        <input
+                            type="search"
+                            id="q"
+                            className={`${FIELD} pl-10`}
+                            placeholder="Search user, action, or complaint reference"
+                            value={form.q}
+                            onChange={onInput("q")}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={clear}
+                        disabled={!hasFilters}
+                        className="h-11 px-4 rounded-xl border border-slate-300 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <i className="fa-solid fa-rotate-left mr-2 text-xs" />
+                        Clear filters
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-                    <div>
-                        <label className="lbl" htmlFor="f_from">
-                            From
-                        </label>
-                        <input
-                            type="date"
-                            id="f_from"
-                            className="field"
-                            value={form.from}
-                            max={form.to || today}
-                            onChange={onInput("from")}
-                        />
+                <hr className="border-slate-100" />
+
+                {/* Row 2: filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {/* Date range spans 2 columns, From/To side by side */}
+                    <div className="sm:col-span-2 grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="lbl" htmlFor="f_from">
+                                From
+                            </label>
+                            <input
+                                type="date"
+                                id="f_from"
+                                className={FIELD}
+                                value={form.from}
+                                max={form.to || today}
+                                onChange={onInput("from")}
+                            />
+                        </div>
+                        <div>
+                            <label className="lbl" htmlFor="f_to">
+                                To
+                            </label>
+                            <input
+                                type="date"
+                                id="f_to"
+                                className={FIELD}
+                                value={form.to}
+                                min={form.from || undefined}
+                                max={today}
+                                onChange={onInput("to")}
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="lbl" htmlFor="f_to">
-                            To
-                        </label>
-                        <input
-                            type="date"
-                            id="f_to"
-                            className="field"
-                            value={form.to}
-                            min={form.from || undefined}
-                            max={today}
-                            onChange={onInput("to")}
-                        />
-                    </div>
+
                     <div>
                         <label className="lbl" htmlFor="f_action">
                             Action
                         </label>
                         <select
                             id="f_action"
-                            className="field"
+                            className={FIELD}
                             value={form.action}
                             onChange={onInput("action")}
                         >
@@ -239,13 +261,14 @@ export default function Audit({ logs, filters, actions, users, today }: Props) {
                             ))}
                         </select>
                     </div>
+
                     <div>
                         <label className="lbl" htmlFor="f_entity">
                             Record type
                         </label>
                         <select
                             id="f_entity"
-                            className="field"
+                            className={FIELD}
                             value={form.entity_type}
                             onChange={onInput("entity_type")}
                         >
@@ -257,13 +280,14 @@ export default function Audit({ logs, filters, actions, users, today }: Props) {
                             </option>
                         </select>
                     </div>
+
                     <div>
                         <label className="lbl" htmlFor="f_user">
                             User
                         </label>
                         <select
                             id="f_user"
-                            className="field"
+                            className={FIELD}
                             value={form.user_id}
                             onChange={onInput("user_id")}
                         >
@@ -275,16 +299,6 @@ export default function Audit({ logs, filters, actions, users, today }: Props) {
                             ))}
                         </select>
                     </div>
-                </div>
-
-                <div>
-                    <button
-                        type="button"
-                        onClick={clear}
-                        className="text-sm text-slate-500 hover:text-slate-800 underline"
-                    >
-                        Clear filters
-                    </button>
                 </div>
             </section>
 
