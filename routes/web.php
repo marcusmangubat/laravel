@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AuditController; 
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Field\FieldDashboardController;
+
 
 
 // Global route patterns
@@ -71,6 +73,12 @@ Route::middleware('auth')->group(function () {
 
         return Inertia::render('field/dashboard');
     })->name('field.dashboard');
+
+    Route::middleware(['auth', 'field'])->prefix('field')->group(function () {
+    Route::get('/dashboard', [FieldDashboardController::class, 'index'])->name('field.dashboard');
+    Route::post('/notifications/read', [FieldDashboardController::class, 'markNotificationsRead'])
+        ->name('field.notifications.read');
+});
 });
 
 // Password reset
