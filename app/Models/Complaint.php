@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Complaint extends Model
@@ -24,4 +25,22 @@ class Complaint extends Model
     public function province() { return $this->belongsTo(Province::class, 'province_id', 'province_id'); }
     public function office()   { return $this->belongsTo(Office::class, 'current_office_id', 'office_id'); }
     public function recorder() { return $this->belongsTo(User::class, 'recorded_by', 'user_id'); }
+
+    /**
+     * ADDED: port of field_scope_sql(). A field office sees a complaint when it is the
+     * primary office, or has a current assignment (primary or coordinating).
+     * Same rule as documentForViewer() in ComplaintWorkflow.
+     */
+    public function scopeVisibleToOffice(Builder $query, int $officeId): Builder
+    {
+        return $query->where(function (Builder $q) use ($officeId) {
+            $q->where('complaints.current_office_id', $officeId)
+              ->orWhereExists(function ($s) use ($officeId) {
+                  $s->selectRaw('1')->from('complaint_assignments as ax')
+                      ->whereColumn('ax.complaint_id', 'complaints.complaint_id')
+                      ->where('ax.to_office_id', $officeId)
+                      ->where('ax.is_current', 1);
+              });
+        });
+    }
 }

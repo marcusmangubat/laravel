@@ -1,20 +1,18 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Admin\ComplaintController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Admin\ComplaintShowController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\AuditController; 
-use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Field\FieldDashboardController;
-
-
+use App\Http\Controllers\Field\ComplaintController as FieldComplaintListController;
+use App\Http\Controllers\Field\FieldComplaintController;
 
 // Global route patterns
 // {id} only matches numbers (must be declared before the routes that use it)
@@ -40,6 +38,11 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+// Password reset
+Route::post('/password/reset', [PasswordResetController::class, 'handle'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('password.reset.handle');
+
 /*
 |--------------------------------------------------------------------------
 | Authenticated routes
@@ -56,35 +59,55 @@ Route::middleware('auth')->group(function () {
             default        => abort(403),
         };
     })->name('dashboard');
+});
 
-    // Field office dashboard (active user + active office only)
-    Route::get('/field/dashboard', function () {
-        $user = auth()->user();
+/*
+|--------------------------------------------------------------------------
+| Field office routes (/field/*)
+|--------------------------------------------------------------------------
+| The active user / active office checks that used to be in the closure
+| must now live in the 'field' middleware (or the controller).
+| If 'field.office' is a separate middleware, use:
+| ['auth', 'field', 'field.office']
+*/
 
-        abort_unless(
-            $user->role === 'field_office' &&
-            $user->is_active &&
-            DB::table('offices')
-                ->where('office_id', $user->office_id)
-                ->where('is_active', 1)
-                ->exists(),
-            403
-        );
+Route::middleware(['auth', 'field'])->prefix('field')->name('field.')->group(function () {
 
-        return Inertia::render('field/dashboard');
-    })->name('field.dashboard');
-
-    Route::middleware(['auth', 'field'])->prefix('field')->group(function () {
-    Route::get('/dashboard', [FieldDashboardController::class, 'index'])->name('field.dashboard');
+    // Dashboard & notifications
+    Route::get('/dashboard', [FieldDashboardController::class, 'index'])->name('dashboard');
     Route::post('/notifications/read', [FieldDashboardController::class, 'markNotificationsRead'])
-        ->name('field.notifications.read');
-});
+        ->name('notifications.read');
+
+    // Complaints
+    Route::get('/complaints', [FieldComplaintListController::class, 'index'])->name('complaints');
+    Route::post('/complaints', [FieldComplaintListController::class, 'store'])->name('complaints.store');
+
+    // Complaint view, edit, and workflow actions
+
+        Route::controller(FieldComplaintController::class)->group(function () {
+            Route::get('complaints/{id}', 'show')
+                ->name('complaints.show');
+
+            Route::post('complaints/{id}/acknowledge', 'acknowledge')
+                ->name('complaints.acknowledge');
+
+            Route::post('complaints/{id}/status', 'status')
+                ->name('complaints.status');
+
+            Route::post('complaints/{id}/update', 'postUpdate')
+                ->name('complaints.update');
+
+            Route::put('complaints/{id}', 'edit')
+                ->name('complaints.edit');
+
+            Route::delete('complaints/{id}', 'destroy')
+                ->name('complaints.destroy');
+
+            Route::get('documents/{id}', 'document')
+                ->name('documents.show');
+        });
 });
 
-// Password reset
-Route::post('/password/reset', [PasswordResetController::class, 'handle'])
-    ->middleware(['guest', 'throttle:10,1'])
-    ->name('password.reset.handle');
 /*
 |--------------------------------------------------------------------------
 | Admin routes (/admin/*)
@@ -99,8 +122,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         ->name('admin.notifications.read');
 
     // Complaints: list & create
-    Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints');
-    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('complaints');
+    Route::post('/complaints', [AdminComplaintController::class, 'store'])->name('complaints.store');
 
     // Complaints: view, edit, delete, and workflow actions
     Route::controller(ComplaintShowController::class)->group(function () {

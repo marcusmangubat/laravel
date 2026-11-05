@@ -157,6 +157,80 @@ class ComplaintWorkflow
         return $rows->values()->all();
     }
 
+    // ───────── Record a complaint (field office) ─────────
+
+    /**
+     * ADDED: a field office records a complaint that reached it. It is assigned to that same
+     * office straight away (status "Assigned") and counts as acknowledged.
+     *
+     * $d keys: title, category_id, description, received_channel, received_at_sql, incident_sql,
+     * province_id, municipality, barangay, specific_location, complainant_name, complainant_contact,
+     * complainant_email, is_anonymous (bool), priority, target_date.
+     * Returns ['complaint_id', 'reference_no', 'message'].
+     */
+    public function recordFromFieldOffice(int $userId, int $officeId, array $d): array
+    {
+        [$id, $ref, $office] = DB::transaction(function () use ($userId, $officeId, $d) {
+            $office = DB::table('offices')->where('office_id', $officeId)->where('is_active', 1)
+                ->first(['office_id', 'office_name']);
+            if (! $office) {
+                $this->fail('Your office is inactive or missing. Contact the RDAC Administrator.');
+            }
+            $assignedId = (int) DB::table('complaint_statuses')->where('status_code', 'assigned')->value('status_id');
+
+            // Reference number RDAC4A-YYYY-000001. The counter row stays locked until commit,
+            // so two people saving at once can never get the same number.
+            $year = (int) now()->year;
+            DB::table('reference_counters')->insertOrIgnore(['counter_year' => $year, 'last_number' => 0]);
+            $next = (int) DB::table('reference_counters')->where('counter_year', $year)->lockForUpdate()->value('last_number') + 1;
+            DB::table('reference_counters')->where('counter_year', $year)->update(['last_number' => $next]);
+            $ref = sprintf('RDAC4A-%d-%06d', $year, $next);
+
+            $id = DB::table('complaints')->insertGetId([
+                'reference_no' => $ref, 'title' => $d['title'], 'category_id' => $d['category_id'] ?? null,
+                'description' => $d['description'], 'received_channel' => $d['received_channel'],
+                'received_at' => $d['received_at'], 'incident_datetime' => $d['incident_sql'] ?? null,
+                'province_id' => $d['province_id'] ?? null, 'municipality' => $d['municipality'] ?? null,
+                'barangay' => $d['barangay'] ?? null, 'specific_location' => $d['specific_location'] ?? null,
+                'is_outside_region' => 0,
+                'complainant_name' => $d['complainant_name'] ?? null, 'complainant_contact' => $d['complainant_contact'] ?? null,
+                'complainant_email' => $d['complainant_email'] ?? null, 'is_anonymous' => $d['is_anonymous'] ? 1 : 0,
+                'status_id' => $assignedId, 'priority' => $d['priority'], 'current_office_id' => $officeId,
+                'target_date' => $d['target_date'] ?? null, 'recorded_by' => $userId,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+
+            $reason = "Recorded at {$office->office_name} and assigned to this office.";
+            DB::table('complaint_assignments')->insert([
+                'complaint_id' => $id, 'assignment_type' => 'primary', 'from_office_id' => null,
+                'to_office_id' => $officeId, 'assigned_by' => $userId, 'reason' => $reason,
+                'target_date' => $d['target_date'] ?? null, 'is_current' => 1,
+                'acknowledged_at' => now(), 'acknowledged_by' => $userId, 'created_at' => now(),
+            ]);
+            DB::table('complaint_status_history')->insert([
+                'complaint_id' => $id, 'from_status_id' => null, 'to_status_id' => $assignedId,
+                'changed_by' => $userId, 'reason' => $reason, 'created_at' => now(),
+            ]);
+
+            return [$id, $ref, $office];
+        });
+
+        // ---- After commit ----
+        $this->notifyAdmins($id, 'assigned', "Complaint $ref was recorded by {$office->office_name}.", $userId);
+        // Remove this mail call if the original wf_record_complaint() did not email admins.
+        $this->mail->notifyAdmins($id, $userId, 'Complaint recorded by a field office',
+            "{$office->office_name} recorded a new complaint and assigned it to itself.",
+            ['Channel' => self::CHANNELS[$d['received_channel']] ?? $d['received_channel'], 'Priority' => $d['priority'], 'Target date' => $d['target_date'] ?? null]);
+        $this->audit($userId, 'complaint_recorded', $id, [
+            'channel' => $d['received_channel'], 'reference_no' => $ref, 'origin_office_id' => $officeId,
+        ]);
+
+        return [
+            'complaint_id' => $id, 'reference_no' => $ref,
+            'message' => "Complaint $ref was recorded and assigned to {$office->office_name}.",
+        ];
+    }
+
     // ───────── Change status ─────────
 
     /** $officeScope: null for Admin; a field-office user's office_id (only the PRIMARY office may change status). */
@@ -677,5 +751,48 @@ class ComplaintWorkflow
     private function audit(int $userId, string $action, int $complaintId, array $data): void
     {
         Log::info('complaint audit', compact('userId', 'action', 'complaintId', 'data'));
+    }
+
+     public function canAcknowledge(int $complaintId, ?int $officeId): bool
+    {
+        return $officeId
+            && DB::table('complaint_assignments')
+                ->where('complaint_id', $complaintId)->where('to_office_id', $officeId)
+                ->where('is_current', 1)->whereNull('acknowledged_at')->exists();
+    }
+ 
+    /** A field office acknowledges the current assignment to its office. */
+    public function acknowledge(int $complaintId, int $userId, int $officeId): string
+    {
+        [$c, $assignmentId] = DB::transaction(function () use ($complaintId, $userId, $officeId) {
+            $c = DB::table('complaints')->where('complaint_id', $complaintId)->lockForUpdate()
+                ->first(['complaint_id', 'reference_no', 'deleted_at']);
+            if (! $c || $c->deleted_at !== null) {
+                abort(404);
+            }
+ 
+            $a = DB::table('complaint_assignments')
+                ->where('complaint_id', $complaintId)->where('to_office_id', $officeId)
+                ->where('is_current', 1)->whereNull('acknowledged_at')
+                ->orderByDesc('assignment_id')->lockForUpdate()->first(['assignment_id']);
+            if (! $a) {
+                $this->fail('There is no unacknowledged assignment for your office on this complaint.');
+            }
+ 
+            DB::table('complaint_assignments')->where('assignment_id', $a->assignment_id)
+                ->update(['acknowledged_at' => now(), 'acknowledged_by' => $userId]);
+            return [$c, (int) $a->assignment_id];
+        });
+ 
+        // ---- After commit ----
+        $this->notifyAdmins($complaintId, 'assigned', "Complaint {$c->reference_no} was acknowledged by the assigned office.", $userId);
+        $this->mail->notifyAdmins($complaintId, $userId, 'Assignment acknowledged',
+            $this->mail->officeName($officeId) . ' acknowledged this assignment and has taken responsibility for the case.',
+            ['Acknowledged at' => now()->format('M j, Y g:i A')]);
+        $this->audit($userId, 'complaint_acknowledged', $complaintId, [
+            'office_id' => $officeId, 'assignment_id' => $assignmentId,
+        ]);
+ 
+        return 'Assignment acknowledged.';
     }
 }
