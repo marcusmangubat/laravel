@@ -1,6 +1,6 @@
-import { FormEvent, useState } from "react";
-import { Head, useForm, usePage } from "@inertiajs/react";
-import AdminLayout from "@/layouts/admin-layout";
+import { FormEvent, useState } from 'react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import AdminLayout from '@/layouts/admin-layout';
 
 type Settings = {
     admin_email: string;
@@ -9,10 +9,10 @@ type Settings = {
     subject_prefix: string;
     alert_recipient: string;
     cooldown_hours: number;
-    driver: "smtp" | "mail";
+    driver: 'smtp' | 'mail';
     smtp_host: string;
     smtp_port: number;
-    smtp_encryption: "ssl" | "tls" | "none";
+    smtp_encryption: 'ssl' | 'tls' | 'none';
     smtp_user: string;
     has_smtp_password: boolean;
 };
@@ -23,9 +23,9 @@ type Props = {
 };
 
 const fieldClass =
-    "mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
-const labelClass = "block text-sm font-medium text-slate-700";
-const errorClass = "mt-1 text-xs text-red-600";
+    'mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100';
+const labelClass = 'block text-sm font-medium text-slate-700';
+const errorClass = 'mt-1 text-xs text-red-600';
 
 export default function EmailSettingsPage({ settings }: Props) {
     const { flash } = usePage<Props>().props;
@@ -33,57 +33,57 @@ export default function EmailSettingsPage({ settings }: Props) {
     const [testEmail, setTestEmail] = useState(
         settings.admin_email || settings.from_email,
     );
-    const [testMessage, setTestMessage] = useState("");
+    const [testMessage, setTestMessage] = useState('');
     const [testOk, setTestOk] = useState<boolean | null>(null);
     const [sendingTest, setSendingTest] = useState(false);
 
     const form = useForm({
-        admin_email: settings.admin_email ?? "",
-        from_email: settings.from_email ?? "",
+        admin_email: settings.admin_email ?? '',
+        from_email: settings.from_email ?? '',
         from_name:
-            settings.from_name ?? "DENR RDAC Complaint Management System",
-        subject_prefix: settings.subject_prefix ?? "[DENR RDAC]",
-        alert_recipient: settings.alert_recipient ?? "",
+            settings.from_name ?? 'DENR RDAC Complaint Management System',
+        subject_prefix: settings.subject_prefix ?? '[DENR RDAC]',
+        alert_recipient: settings.alert_recipient ?? '',
         cooldown_hours: Number(settings.cooldown_hours ?? 12),
-        driver: settings.driver ?? "smtp",
-        smtp_host: settings.smtp_host ?? "",
+        driver: settings.driver ?? 'smtp',
+        smtp_host: settings.smtp_host ?? '',
         smtp_port: Number(settings.smtp_port ?? 465),
-        smtp_encryption: settings.smtp_encryption ?? "ssl",
-        smtp_user: settings.smtp_user ?? "",
-        smtp_pass: "",
+        smtp_encryption: settings.smtp_encryption ?? 'ssl',
+        smtp_user: settings.smtp_user ?? '',
+        smtp_pass: '',
     });
 
     function submit(e: FormEvent) {
         e.preventDefault();
-        form.put("/admin/email-settings", { preserveScroll: true });
+        form.put('/admin/email-settings', { preserveScroll: true });
     }
 
-    function updateEncryption(value: "ssl" | "tls" | "none") {
+    function updateEncryption(value: 'ssl' | 'tls' | 'none') {
         form.setData((data) => ({
             ...data,
             smtp_encryption: value,
             smtp_port:
-                value === "ssl" ? 465 : value === "tls" ? 587 : data.smtp_port,
+                value === 'ssl' ? 465 : value === 'tls' ? 587 : data.smtp_port,
         }));
     }
 
     async function sendTest(e: FormEvent) {
         e.preventDefault();
         setSendingTest(true);
-        setTestMessage("Sending test email…");
+        setTestMessage('Sending test email…');
         setTestOk(null);
 
         try {
-            const response = await fetch("/admin/email-settings/test", {
-                method: "POST",
-                credentials: "same-origin",
+            const response = await fetch('/admin/email-settings/test', {
+                method: 'POST',
+                credentials: 'same-origin',
                 headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN":
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN':
                         document.querySelector<HTMLMetaElement>(
                             'meta[name="csrf-token"]',
-                        )?.content ?? "",
+                        )?.content ?? '',
                 },
                 body: JSON.stringify({ test_email: testEmail }),
             });
@@ -92,13 +92,13 @@ export default function EmailSettingsPage({ settings }: Props) {
             setTestMessage(
                 data.message ??
                     (data.ok
-                        ? "Test email sent."
-                        : "Failed to send test email."),
+                        ? 'Test email sent.'
+                        : 'Failed to send test email.'),
             );
         } catch {
             setTestOk(false);
             setTestMessage(
-                "The server did not return a valid response. Reload the page and try again.",
+                'The server did not return a valid response. Reload the page and try again.',
             );
         } finally {
             setSendingTest(false);
@@ -145,7 +145,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                         <button
                             type="button"
                             onClick={() => {
-                                setTestMessage("");
+                                setTestMessage('');
                                 setTestOk(null);
                                 setTestOpen(true);
                             }}
@@ -162,7 +162,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 maxLength={150}
                                 value={form.data.from_name}
                                 onChange={(e) =>
-                                    form.setData("from_name", e.target.value)
+                                    form.setData('from_name', e.target.value)
                                 }
                             />
                         </Field>
@@ -177,7 +177,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 maxLength={150}
                                 value={form.data.from_email}
                                 onChange={(e) =>
-                                    form.setData("from_email", e.target.value)
+                                    form.setData('from_email', e.target.value)
                                 }
                                 placeholder="name@gmail.com"
                             />
@@ -192,7 +192,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 maxLength={150}
                                 value={form.data.admin_email}
                                 onChange={(e) =>
-                                    form.setData("admin_email", e.target.value)
+                                    form.setData('admin_email', e.target.value)
                                 }
                             />
                         </Field>
@@ -207,7 +207,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 value={form.data.alert_recipient}
                                 onChange={(e) =>
                                     form.setData(
-                                        "alert_recipient",
+                                        'alert_recipient',
                                         e.target.value,
                                     )
                                 }
@@ -223,7 +223,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 value={form.data.subject_prefix}
                                 onChange={(e) =>
                                     form.setData(
-                                        "subject_prefix",
+                                        'subject_prefix',
                                         e.target.value,
                                     )
                                 }
@@ -242,7 +242,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 value={form.data.cooldown_hours}
                                 onChange={(e) =>
                                     form.setData(
-                                        "cooldown_hours",
+                                        'cooldown_hours',
                                         Number(e.target.value),
                                     )
                                 }
@@ -268,8 +268,8 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 value={form.data.driver}
                                 onChange={(e) =>
                                     form.setData(
-                                        "driver",
-                                        e.target.value as "smtp" | "mail",
+                                        'driver',
+                                        e.target.value as 'smtp' | 'mail',
                                     )
                                 }
                             >
@@ -283,7 +283,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 maxLength={255}
                                 value={form.data.smtp_host}
                                 onChange={(e) =>
-                                    form.setData("smtp_host", e.target.value)
+                                    form.setData('smtp_host', e.target.value)
                                 }
                                 placeholder="smtp.gmail.com"
                             />
@@ -298,7 +298,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 value={form.data.smtp_port}
                                 onChange={(e) =>
                                     form.setData(
-                                        "smtp_port",
+                                        'smtp_port',
                                         Number(e.target.value),
                                     )
                                 }
@@ -314,9 +314,9 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 onChange={(e) =>
                                     updateEncryption(
                                         e.target.value as
-                                            | "ssl"
-                                            | "tls"
-                                            | "none",
+                                            | 'ssl'
+                                            | 'tls'
+                                            | 'none',
                                     )
                                 }
                             >
@@ -337,7 +337,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 autoComplete="off"
                                 value={form.data.smtp_user}
                                 onChange={(e) =>
-                                    form.setData("smtp_user", e.target.value)
+                                    form.setData('smtp_user', e.target.value)
                                 }
                                 placeholder="name@gmail.com"
                             />
@@ -352,12 +352,12 @@ export default function EmailSettingsPage({ settings }: Props) {
                                 autoComplete="new-password"
                                 value={form.data.smtp_pass}
                                 onChange={(e) =>
-                                    form.setData("smtp_pass", e.target.value)
+                                    form.setData('smtp_pass', e.target.value)
                                 }
                                 placeholder={
                                     settings.has_smtp_password
-                                        ? "Leave blank to keep current password"
-                                        : "Enter SMTP password"
+                                        ? 'Leave blank to keep current password'
+                                        : 'Enter SMTP password'
                                 }
                             />
                         </Field>
@@ -378,7 +378,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                             disabled={form.processing}
                             className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
                         >
-                            {form.processing ? "Saving…" : "Save configuration"}
+                            {form.processing ? 'Saving…' : 'Save configuration'}
                         </button>
                     </div>
                 </form>
@@ -434,7 +434,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                             {testMessage && (
                                 <p
                                     role="status"
-                                    className={`rounded-xl border p-3 text-sm ${testOk === true ? "border-emerald-200 bg-emerald-50 text-emerald-800" : testOk === false ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 bg-slate-50 text-slate-600"}`}
+                                    className={`rounded-xl border p-3 text-sm ${testOk === true ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : testOk === false ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
                                 >
                                     {testMessage}
                                 </p>
@@ -452,7 +452,7 @@ export default function EmailSettingsPage({ settings }: Props) {
                                     disabled={sendingTest}
                                     className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                                 >
-                                    {sendingTest ? "Sending…" : "Send test"}
+                                    {sendingTest ? 'Sending…' : 'Send test'}
                                 </button>
                             </div>
                         </form>

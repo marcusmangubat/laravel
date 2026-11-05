@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Bell,
     ClipboardList,
@@ -6,35 +6,35 @@ import {
     FileText,
     KeyRound,
     LogOut,
-} from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+} from 'lucide-react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 // Change Password: point this at wherever your project serves that page.
 const NAV = [
     {
-        href: "/field/dashboard",
-        label: "Dashboard",
-        short: "Dashboard",
+        href: '/field/dashboard',
+        label: 'Dashboard',
+        short: 'Dashboard',
         icon: Gauge,
     },
     {
-        href: "/field/complaints",
-        label: "My Complaints",
-        short: "My Complaints",
+        href: '/field/complaints',
+        label: 'My Complaints',
+        short: 'My Complaints',
         icon: ClipboardList,
     },
     {
-        href: "/field/reports",
-        label: "Reports",
-        short: "Reports",
+        href: '/field/reports',
+        label: 'Reports',
+        short: 'Reports',
         icon: FileText,
     },
     {
-        href: "/change-password",
-        label: "Change Password",
-        short: "Password",
+        href: '/change-password',
+        label: 'Change Password',
+        short: 'Password',
         icon: KeyRound,
     },
 ];
@@ -53,10 +53,10 @@ export default function FieldLayout({
     children,
 }: Props) {
     const page = usePage<any>();
-    const current = page.url.split("?")[0];
+    const current = page.url.split('?')[0];
     const fullName: string =
-        page.props.auth?.user?.full_name ?? "Field Office User";
-    const officeName: string = page.props.office_name ?? "Field Office";
+        page.props.auth?.user?.full_name ?? 'Field Office User';
+    const officeName: string = page.props.office_name ?? 'Field Office';
     const unreadCount: number = unread ?? page.props.unread ?? 0;
 
     const [bellOpen, setBellOpen] = useState(false);
@@ -67,13 +67,13 @@ export default function FieldLayout({
             if (bellRef.current && !bellRef.current.contains(e.target as Node))
                 setBellOpen(false);
         };
-        document.addEventListener("mousedown", onClick);
-        return () => document.removeEventListener("mousedown", onClick);
+        document.addEventListener('mousedown', onClick);
+        return () => document.removeEventListener('mousedown', onClick);
     }, []);
 
     const markRead = () =>
         router.post(
-            "/field/notifications/read",
+            '/field/notifications/read',
             {},
             { preserveScroll: true, preserveState: true },
         );
@@ -124,11 +124,11 @@ export default function FieldLayout({
                             <Link
                                 key={href}
                                 href={href}
-                                aria-current={active ? "page" : undefined}
+                                aria-current={active ? 'page' : undefined}
                                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
                                     active
-                                        ? "bg-white/10 font-semibold text-white"
-                                        : "hover:bg-white/5"
+                                        ? 'bg-white/10 font-semibold text-white'
+                                        : 'hover:bg-white/5'
                                 }`}
                             >
                                 <Icon className="h-4 w-4 shrink-0" />
@@ -179,13 +179,13 @@ export default function FieldLayout({
                                     aria-label="Notifications"
                                     aria-expanded={bellOpen}
                                     onClick={() => setBellOpen((o) => !o)}
-                                    className="relative h-10 w-10 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-green-200"
+                                    className="relative h-10 w-10 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none"
                                 >
                                     <Bell className="mx-auto h-4 w-4" />
                                     {unreadCount > 0 && (
-                                        <span className="absolute -right-1.5 -top-1.5 h-5 min-w-[1.25rem] rounded-full bg-red-600 px-1 text-xs font-semibold leading-5 text-white">
+                                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-[1.25rem] rounded-full bg-red-600 px-1 text-xs leading-5 font-semibold text-white">
                                             {unreadCount > 99
-                                                ? "99+"
+                                                ? '99+'
                                                 : unreadCount}
                                         </span>
                                     )}
@@ -204,8 +204,8 @@ export default function FieldLayout({
                                         </div>
                                         <div className="px-4 py-6 text-center text-sm text-slate-600">
                                             {unreadCount > 0
-                                                ? `You have ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`
-                                                : "You are all caught up."}
+                                                ? `You have ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}.`
+                                                : 'You are all caught up.'}
                                         </div>
                                         {unreadCount > 0 && (
                                             <div className="border-t border-slate-200 px-4 py-3">
@@ -245,8 +245,8 @@ export default function FieldLayout({
                                 href={href}
                                 className={`shrink-0 rounded-full px-3 py-1.5 ${
                                     current === href
-                                        ? "bg-[#0f3d2e] text-white"
-                                        : "bg-slate-200"
+                                        ? 'bg-[#0f3d2e] text-white'
+                                        : 'bg-slate-200'
                                 }`}
                             >
                                 {short}

@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     CalendarDays,
     CircleCheck,
@@ -10,8 +10,8 @@ import {
     Send,
     TriangleAlert,
     type LucideIcon,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import {
     BarList,
     Card,
@@ -22,8 +22,8 @@ import {
     serif,
     todayStr,
     type Row,
-} from "@/Components/dashboard-widgets";
-import FieldLayout from "@/layouts/FieldLayouts";
+} from '@/Components/dashboard-widgets';
+import FieldLayout from '@/layouts/FieldLayouts';
 
 // ───────── Types (match what FieldDashboardController sends) ─────────
 type Cards = {
@@ -76,25 +76,25 @@ type Props = {
 
 // ───────── Constants ─────────
 const STATUS_CLS: Record<string, string> = {
-    assigned: "bg-blue-100 text-blue-800",
-    under_investigation: "bg-indigo-100 text-indigo-800",
-    for_info: "bg-orange-100 text-orange-800",
+    assigned: 'bg-blue-100 text-blue-800',
+    under_investigation: 'bg-indigo-100 text-indigo-800',
+    for_info: 'bg-orange-100 text-orange-800',
 };
 const PRIORITY_CLS: Record<string, string> = {
-    urgent: "bg-red-100 text-red-800",
-    high: "bg-orange-100 text-orange-800",
-    normal: "bg-slate-100 text-slate-700",
-    low: "bg-slate-50 text-slate-500",
+    urgent: 'bg-red-100 text-red-800',
+    high: 'bg-orange-100 text-orange-800',
+    normal: 'bg-slate-100 text-slate-700',
+    low: 'bg-slate-50 text-slate-500',
 };
 const ACTION_LABEL: Record<string, string> = {
-    inspection: "Inspection",
-    investigation_update: "Investigation update",
-    finding: "Finding",
-    recommendation: "Recommendation",
-    info_request: "Information request",
-    rdac_remark: "RDAC remark",
-    follow_up: "Follow-up",
-    internal_remark: "Internal remark",
+    inspection: 'Inspection',
+    investigation_update: 'Investigation update',
+    finding: 'Finding',
+    recommendation: 'Recommendation',
+    info_request: 'Information request',
+    rdac_remark: 'RDAC remark',
+    follow_up: 'Follow-up',
+    internal_remark: 'Internal remark',
 };
 
 const CARD_DEFS: {
@@ -104,67 +104,67 @@ const CARD_DEFS: {
     color: string;
 }[] = [
     {
-        key: "total",
-        label: "Assigned to my office",
+        key: 'total',
+        label: 'Assigned to my office',
         icon: FolderOpen,
-        color: "text-slate-700",
+        color: 'text-slate-700',
     },
     {
-        key: "newly_assigned",
-        label: "Newly assigned",
+        key: 'newly_assigned',
+        label: 'Newly assigned',
         icon: Inbox,
-        color: "text-blue-700",
+        color: 'text-blue-700',
     },
     {
-        key: "under_investigation",
-        label: "Under investigation",
+        key: 'under_investigation',
+        label: 'Under investigation',
         icon: Search,
-        color: "text-indigo-700",
+        color: 'text-indigo-700',
     },
     {
-        key: "awaiting_action",
-        label: "Awaiting my action",
+        key: 'awaiting_action',
+        label: 'Awaiting my action',
         icon: Hourglass,
-        color: "text-amber-700",
+        color: 'text-amber-700',
     },
     {
-        key: "submitted",
-        label: "Submitted to RDAC",
+        key: 'submitted',
+        label: 'Submitted to RDAC',
         icon: Send,
-        color: "text-purple-700",
+        color: 'text-purple-700',
     },
     {
-        key: "completed",
-        label: "Completed",
+        key: 'completed',
+        label: 'Completed',
         icon: CircleCheck,
-        color: "text-green-700",
+        color: 'text-green-700',
     },
     {
-        key: "due_soon",
-        label: "Due in 7 days",
+        key: 'due_soon',
+        label: 'Due in 7 days',
         icon: CalendarDays,
-        color: "text-orange-700",
+        color: 'text-orange-700',
     },
     {
-        key: "overdue",
-        label: "Overdue",
+        key: 'overdue',
+        label: 'Overdue',
         icon: TriangleAlert,
-        color: "text-red-700",
+        color: 'text-red-700',
     },
 ];
 
 // Data that the 60-second auto-refresh re-fetches (filters are kept from the URL)
 const LIVE_PROPS = [
-    "generated",
-    "cards",
-    "by_status",
-    "by_category",
-    "by_priority",
-    "trend",
-    "needs",
-    "assignments",
-    "activity",
-    "unread",
+    'generated',
+    'cards',
+    'by_status',
+    'by_category',
+    'by_priority',
+    'trend',
+    'needs',
+    'assignments',
+    'activity',
+    'unread',
 ];
 
 // ───────── Page ─────────
@@ -185,12 +185,12 @@ export default function FieldDashboard(props: Props) {
 
     const TODAY = todayStr();
     const { data, setData, get, errors, clearErrors } = useForm({
-        from: filters.from ?? "",
-        to: filters.to ?? "",
+        from: filters.from ?? '',
+        to: filters.to ?? '',
     });
-    const [localError, setLocalError] = useState("");
+    const [localError, setLocalError] = useState('');
     const [refreshing, setRefreshing] = useState(false);
-    const error = localError || errors.from || errors.to || "";
+    const error = localError || errors.from || errors.to || '';
 
     const refresh = (silent = false) => {
         router.reload({
@@ -210,29 +210,29 @@ export default function FieldDashboard(props: Props) {
 
     const apply = (e: React.FormEvent) => {
         e.preventDefault();
-        setLocalError("");
+        setLocalError('');
         if ((data.from && data.from > TODAY) || (data.to && data.to > TODAY)) {
             setLocalError(
-                "Future dates cannot be selected. Please choose today or an earlier date.",
+                'Future dates cannot be selected. Please choose today or an earlier date.',
             );
             return;
         }
         if (data.from && data.to && data.from > data.to) {
-            setLocalError("The start date must be on or before the end date.");
+            setLocalError('The start date must be on or before the end date.');
             return;
         }
-        get("/field/dashboard", { preserveState: true, preserveScroll: true });
+        get('/field/dashboard', { preserveState: true, preserveScroll: true });
     };
 
     const clear = () => {
-        setData({ from: "", to: "" });
-        setLocalError("");
+        setData({ from: '', to: '' });
+        setLocalError('');
         clearErrors();
-        router.get("/field/dashboard", {}, { preserveScroll: true });
+        router.get('/field/dashboard', {}, { preserveScroll: true });
     };
 
     const inputCls =
-        "rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-green-200";
+        'rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-green-200';
 
     return (
         <FieldLayout
@@ -242,10 +242,10 @@ export default function FieldDashboard(props: Props) {
                 <button
                     type="button"
                     onClick={() => refresh()}
-                    className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-600 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-green-200"
+                    className="h-10 rounded-xl border border-slate-300 px-3 text-sm text-slate-600 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none"
                 >
                     <RefreshCw
-                        className={`inline h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                        className={`inline h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
                     />
                     <span className="ml-2 hidden sm:inline">Refresh</span>
                 </button>
@@ -271,7 +271,7 @@ export default function FieldDashboard(props: Props) {
                         className={inputCls}
                         value={data.from}
                         max={data.to || TODAY}
-                        onChange={(e) => setData("from", e.target.value)}
+                        onChange={(e) => setData('from', e.target.value)}
                     />
                 </div>
                 <div>
@@ -288,12 +288,12 @@ export default function FieldDashboard(props: Props) {
                         value={data.to}
                         min={data.from || undefined}
                         max={TODAY}
-                        onChange={(e) => setData("to", e.target.value)}
+                        onChange={(e) => setData('to', e.target.value)}
                     />
                 </div>
                 <button
                     type="submit"
-                    className="rounded-xl bg-[#15803d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200"
+                    className="rounded-xl bg-[#15803d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none"
                 >
                     Apply
                 </button>
@@ -319,7 +319,7 @@ export default function FieldDashboard(props: Props) {
                     <button
                         type="button"
                         onClick={() => {
-                            setLocalError("");
+                            setLocalError('');
                             clearErrors();
                         }}
                         className="font-semibold underline"
@@ -337,7 +337,7 @@ export default function FieldDashboard(props: Props) {
                 {CARD_DEFS.map(({ key, label, icon: Icon, color }) => (
                     <div
                         key={key}
-                        className={`rounded-2xl border border-slate-200 bg-white p-4 ${key === "overdue" && cards[key] > 0 ? "ring-2 ring-red-200" : ""}`}
+                        className={`rounded-2xl border border-slate-200 bg-white p-4 ${key === 'overdue' && cards[key] > 0 ? 'ring-2 ring-red-200' : ''}`}
                     >
                         <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                             <span>{label}</span>
@@ -368,11 +368,11 @@ export default function FieldDashboard(props: Props) {
                         <thead>
                             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
                                 {[
-                                    "Reference",
-                                    "Subject",
-                                    "Priority",
-                                    "Status",
-                                    "Target date",
+                                    'Reference',
+                                    'Subject',
+                                    'Priority',
+                                    'Status',
+                                    'Target date',
                                 ].map((h) => (
                                     <th
                                         key={h}
@@ -392,7 +392,7 @@ export default function FieldDashboard(props: Props) {
                                             key={r.complaint_id}
                                             className="border-b border-slate-100 hover:bg-slate-50"
                                         >
-                                            <td className="whitespace-nowrap py-2.5 pr-3">
+                                            <td className="py-2.5 pr-3 whitespace-nowrap">
                                                 <Link
                                                     href={`/field/complaints/${r.complaint_id}`}
                                                     className="font-semibold text-[#15803d] hover:underline"
@@ -403,25 +403,25 @@ export default function FieldDashboard(props: Props) {
                                             <td className="max-w-xs truncate py-2.5 pr-3">
                                                 {r.title}
                                             </td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3">
+                                            <td className="py-2.5 pr-3 whitespace-nowrap">
                                                 <span
-                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_CLS[r.priority] ?? ""}`}
+                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_CLS[r.priority] ?? ''}`}
                                                 >
                                                     {cap(r.priority)}
                                                 </span>
                                             </td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3">
+                                            <td className="py-2.5 pr-3 whitespace-nowrap">
                                                 <span
-                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLS[r.status_code] ?? "bg-slate-100 text-slate-700"}`}
+                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLS[r.status_code] ?? 'bg-slate-100 text-slate-700'}`}
                                                 >
                                                     {r.status_name}
                                                 </span>
                                             </td>
                                             <td
-                                                className={`whitespace-nowrap py-2.5 text-xs ${overdue ? "font-semibold text-red-700" : "text-slate-500"}`}
+                                                className={`py-2.5 text-xs whitespace-nowrap ${overdue ? 'font-semibold text-red-700' : 'text-slate-500'}`}
                                             >
                                                 {fmtDate(r.target_date)}
-                                                {overdue ? " · overdue" : ""}
+                                                {overdue ? ' · overdue' : ''}
                                             </td>
                                         </tr>
                                     );
@@ -491,8 +491,8 @@ export default function FieldDashboard(props: Props) {
                                     <p className="text-xs text-slate-400">
                                         {cap(a.assignment_type)}
                                         {Number(a.is_current) === 1
-                                            ? ""
-                                            : " (ended)"}{" "}
+                                            ? ''
+                                            : ' (ended)'}{' '}
                                         · {fmtDateTime(a.created_at)}
                                     </p>
                                 </li>
@@ -516,11 +516,11 @@ export default function FieldDashboard(props: Props) {
                                     <div>
                                         <p className="text-slate-700">
                                             {ACTION_LABEL[a.action_type] ??
-                                                a.action_type}{" "}
+                                                a.action_type}{' '}
                                             · {a.reference_no}
                                         </p>
                                         <p className="text-xs text-slate-400">
-                                            {a.full_name} ·{" "}
+                                            {a.full_name} ·{' '}
                                             {fmtDateTime(a.action_date)}
                                         </p>
                                     </div>

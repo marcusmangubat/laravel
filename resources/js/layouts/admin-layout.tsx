@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Bell,
     Building2,
@@ -9,52 +9,52 @@ import {
     Mail,
     ShieldCheck,
     Users,
-} from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+} from 'lucide-react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 const NAV = [
     {
-        href: "/admin/dashboard",
-        label: "Dashboard",
-        short: "Dashboard",
+        href: '/admin/dashboard',
+        label: 'Dashboard',
+        short: 'Dashboard',
         icon: Gauge,
     },
     {
-        href: "/admin/complaints",
-        label: "Complaints",
-        short: "Complaints",
+        href: '/admin/complaints',
+        label: 'Complaints',
+        short: 'Complaints',
         icon: ClipboardList,
     },
     {
-        href: "/admin/offices",
-        label: "Office Directory",
-        short: "Offices",
+        href: '/admin/offices',
+        label: 'Office Directory',
+        short: 'Offices',
         icon: Building2,
     },
     {
-        href: "/admin/users",
-        label: "Field Office Accounts",
-        short: "Accounts",
+        href: '/admin/users',
+        label: 'Field Office Accounts',
+        short: 'Accounts',
         icon: Users,
     },
     {
-        href: "/admin/reports",
-        label: "Reports",
-        short: "Reports",
+        href: '/admin/reports',
+        label: 'Reports',
+        short: 'Reports',
         icon: FileText,
     },
     {
-        href: "/admin/audit",
-        label: "Audit Trail",
-        short: "Audit",
+        href: '/admin/audit',
+        label: 'Audit Trail',
+        short: 'Audit',
         icon: ShieldCheck,
     },
     {
-        href: "/admin/email-settings",
-        label: "Email Settings",
-        short: "Email",
+        href: '/admin/email-settings',
+        label: 'Email Settings',
+        short: 'Email',
         icon: Mail,
     },
 ];
@@ -73,9 +73,9 @@ export default function AdminLayout({
     children,
 }: Props) {
     const page = usePage<any>();
-    const current = page.url.split("?")[0];
+    const current = page.url.split('?')[0];
     const fullName: string =
-        page.props.auth?.user?.full_name ?? "Administrator";
+        page.props.auth?.user?.full_name ?? 'Administrator';
 
     const [bellOpen, setBellOpen] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
@@ -86,13 +86,13 @@ export default function AdminLayout({
             if (bellRef.current && !bellRef.current.contains(e.target as Node))
                 setBellOpen(false);
         };
-        document.addEventListener("mousedown", onClick);
-        return () => document.removeEventListener("mousedown", onClick);
+        document.addEventListener('mousedown', onClick);
+        return () => document.removeEventListener('mousedown', onClick);
     }, []);
 
     const markRead = () =>
         router.post(
-            "/admin/notifications/read",
+            '/admin/notifications/read',
             {},
             { preserveScroll: true, preserveState: true },
         );
@@ -143,11 +143,11 @@ export default function AdminLayout({
                             <Link
                                 key={href}
                                 href={href}
-                                aria-current={active ? "page" : undefined}
+                                aria-current={active ? 'page' : undefined}
                                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
                                     active
-                                        ? "bg-white/10 font-semibold text-white"
-                                        : "hover:bg-white/5"
+                                        ? 'bg-white/10 font-semibold text-white'
+                                        : 'hover:bg-white/5'
                                 }`}
                             >
                                 <Icon className="h-4 w-4 shrink-0" />
@@ -197,12 +197,12 @@ export default function AdminLayout({
                                     aria-label="Notifications"
                                     aria-expanded={bellOpen}
                                     onClick={() => setBellOpen((o) => !o)}
-                                    className="relative h-10 w-10 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-green-200"
+                                    className="relative h-10 w-10 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none"
                                 >
                                     <Bell className="mx-auto h-4 w-4" />
                                     {unread > 0 && (
-                                        <span className="absolute -right-1.5 -top-1.5 h-5 min-w-[1.25rem] rounded-full bg-red-600 px-1 text-xs font-semibold leading-5 text-white">
-                                            {unread > 99 ? "99+" : unread}
+                                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-[1.25rem] rounded-full bg-red-600 px-1 text-xs leading-5 font-semibold text-white">
+                                            {unread > 99 ? '99+' : unread}
                                         </span>
                                     )}
                                 </button>
@@ -220,8 +220,8 @@ export default function AdminLayout({
                                         </div>
                                         <div className="px-4 py-6 text-center text-sm text-slate-600">
                                             {unread > 0
-                                                ? `You have ${unread} unread notification${unread === 1 ? "" : "s"}.`
-                                                : "You are all caught up."}
+                                                ? `You have ${unread} unread notification${unread === 1 ? '' : 's'}.`
+                                                : 'You are all caught up.'}
                                         </div>
                                         {unread > 0 && (
                                             <div className="border-t border-slate-200 px-4 py-3">
@@ -261,8 +261,8 @@ export default function AdminLayout({
                                 href={href}
                                 className={`shrink-0 rounded-full px-3 py-1.5 ${
                                     current === href
-                                        ? "bg-[#0f3d2e] text-white"
-                                        : "bg-slate-200"
+                                        ? 'bg-[#0f3d2e] text-white'
+                                        : 'bg-slate-200'
                                 }`}
                             >
                                 {short}

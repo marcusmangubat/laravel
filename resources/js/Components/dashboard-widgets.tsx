@@ -1,43 +1,43 @@
 // resources/js/components/dashboard-widgets.tsx
 // Small pieces shared by the Admin and Field Office dashboards.
 
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 export type Row = { label: string; total: number };
 
 export const serif = { fontFamily: "'DM Serif Display', serif" };
 
 export const cap = (s: string) =>
-    s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+    s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
 export const fmtDateTime = (s: string) =>
     s
-        ? new Date(s.replace(" ", "T")).toLocaleString("en-PH", {
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
+        ? new Date(s.replace(' ', 'T')).toLocaleString('en-PH', {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
           })
-        : "";
+        : '';
 
 export const fmtDate = (s: string | null) =>
     s
-        ? new Date(s + "T00:00:00").toLocaleDateString("en-PH", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
+        ? new Date(s + 'T00:00:00').toLocaleDateString('en-PH', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
           })
-        : "Not set";
+        : 'Not set';
 
 /** Today as YYYY-MM-DD in the browser's local time (used to block future dates). */
 export const todayStr = () => {
     const d = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
+    const p = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
 export function Card({
-    className = "",
+    className = '',
     children,
 }: {
     className?: string;
@@ -109,7 +109,7 @@ export function TrendChart({ rows }: { rows: Row[] }) {
                             className="flex h-full flex-1 flex-col items-center justify-end"
                         >
                             <span className="mb-1 text-[10px] text-slate-500">
-                                {t || ""}
+                                {t || ''}
                             </span>
                             <div
                                 className="w-full rounded-t bg-[#15803d]"

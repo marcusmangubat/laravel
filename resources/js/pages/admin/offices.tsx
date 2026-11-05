@@ -1,7 +1,7 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Search } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
-import AdminLayout from "@/layouts/admin-layout";
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Search } from 'lucide-react';
+import { type ReactNode, useRef, useState } from 'react';
+import AdminLayout from '@/layouts/admin-layout';
 
 // ───────── Types (match what OfficeController sends) ─────────
 type Office = {
@@ -35,8 +35,8 @@ type Filters = {
 };
 
 const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
+    'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200';
+const lblCls = 'mb-1 block text-xs font-semibold text-slate-500';
 
 function Field({
     label,
@@ -80,14 +80,14 @@ export default function Offices({
     const go = (next: Filters, pageNo = 1) => {
         const params: Record<string, string | number> = {};
         (Object.keys(next) as (keyof Filters)[]).forEach((k) => {
-            if (next[k] !== "") params[k] = next[k];
+            if (next[k] !== '') params[k] = next[k];
         });
         if (pageNo > 1) params.page = pageNo;
-        router.get("/admin/offices", params, {
+        router.get('/admin/offices', params, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
-            only: ["offices", "filters", "errors"],
+            only: ['offices', 'filters', 'errors'],
             onStart: () => setLoading(true),
             onFinish: () => setLoading(false),
         });
@@ -96,7 +96,7 @@ export default function Offices({
     const setFilter = (key: keyof Filters, value: string) => {
         const next = { ...f, [key]: value };
         setF(next);
-        if (key === "q") {
+        if (key === 'q') {
             clearTimeout(debounce.current);
             debounce.current = setTimeout(() => go(next), 350); // wait until typing pauses
             return;
@@ -106,11 +106,11 @@ export default function Offices({
 
     const clearFilters = () => {
         const empty: Filters = {
-            q: "",
-            office_type: "",
-            province_id: "",
-            is_active: "",
-            can_receive: "",
+            q: '',
+            office_type: '',
+            province_id: '',
+            is_active: '',
+            can_receive: '',
         };
         setF(empty);
         go(empty);
@@ -138,7 +138,7 @@ export default function Offices({
                     accounts, and assignments.
                 </p>
                 <div className="relative max-w-md">
-                    <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <label htmlFor="q" className="sr-only">
                         Search offices
                     </label>
@@ -148,7 +148,7 @@ export default function Offices({
                         className={`${fieldCls} pl-10`}
                         placeholder="Search name, code, province, or parent office"
                         value={f.q}
-                        onChange={(e) => setFilter("q", e.target.value)}
+                        onChange={(e) => setFilter('q', e.target.value)}
                     />
                 </div>
 
@@ -159,7 +159,7 @@ export default function Offices({
                             className={fieldCls}
                             value={f.office_type}
                             onChange={(e) =>
-                                setFilter("office_type", e.target.value)
+                                setFilter('office_type', e.target.value)
                             }
                         >
                             <option value="">All types</option>
@@ -178,7 +178,7 @@ export default function Offices({
                             className={fieldCls}
                             value={f.province_id}
                             onChange={(e) =>
-                                setFilter("province_id", e.target.value)
+                                setFilter('province_id', e.target.value)
                             }
                         >
                             <option value="">All provinces</option>
@@ -198,7 +198,7 @@ export default function Offices({
                             className={fieldCls}
                             value={f.is_active}
                             onChange={(e) =>
-                                setFilter("is_active", e.target.value)
+                                setFilter('is_active', e.target.value)
                             }
                         >
                             <option value="">All</option>
@@ -212,7 +212,7 @@ export default function Offices({
                             className={fieldCls}
                             value={f.can_receive}
                             onChange={(e) =>
-                                setFilter("can_receive", e.target.value)
+                                setFilter('can_receive', e.target.value)
                             }
                         >
                             <option value="">All</option>
@@ -243,21 +243,21 @@ export default function Offices({
             {/* Table */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <div
-                    className={`overflow-x-auto transition-opacity ${loading ? "opacity-50" : ""}`}
+                    className={`overflow-x-auto transition-opacity ${loading ? 'opacity-50' : ''}`}
                     aria-busy={loading}
                 >
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50">
                             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
                                 {[
-                                    "Office",
-                                    "Type",
-                                    "Province",
-                                    "Reports to",
-                                    "Contact",
-                                    "Assignments",
-                                    "Accounts",
-                                    "Complaints",
+                                    'Office',
+                                    'Type',
+                                    'Province',
+                                    'Reports to',
+                                    'Contact',
+                                    'Assignments',
+                                    'Accounts',
+                                    'Complaints',
                                 ].map((h) => (
                                     <th
                                         key={h}
@@ -276,7 +276,7 @@ export default function Offices({
                                     const contact =
                                         [o.contact_number, o.email]
                                             .filter(Boolean)
-                                            .join(" · ") || "—";
+                                            .join(' · ') || '—';
                                     return (
                                         <tr
                                             key={o.office_id}
@@ -300,30 +300,30 @@ export default function Offices({
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                                                     {o.type_label}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-slate-600">
-                                                {o.province_name || "—"}
+                                                {o.province_name || '—'}
                                             </td>
                                             <td className="px-4 py-3 text-slate-600">
-                                                {o.parent_name || "—"}
+                                                {o.parent_name || '—'}
                                             </td>
-                                            <td className="max-w-xs break-words px-4 py-3 text-xs text-slate-500">
+                                            <td className="max-w-xs px-4 py-3 text-xs break-words text-slate-500">
                                                 {contact}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <span
-                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${can ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}
+                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${can ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'}`}
                                                 >
                                                     {can
-                                                        ? "Can receive"
-                                                        : "Cannot receive"}
+                                                        ? 'Can receive'
+                                                        : 'Cannot receive'}
                                                 </span>
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <Link
                                                     href={`/admin/users?office_id=${o.office_id}`}
                                                     className="font-semibold text-[#15803d] hover:underline"
@@ -331,7 +331,7 @@ export default function Offices({
                                                     {o.account_count}
                                                 </Link>
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <Link
                                                     href={`/admin/complaints?office_id=${o.office_id}`}
                                                     className="font-semibold text-[#15803d] hover:underline"
@@ -360,7 +360,7 @@ export default function Offices({
                     <p>
                         {offices.total
                             ? `Showing ${start}–${end} of ${offices.total.toLocaleString()} offices`
-                            : "0 offices"}
+                            : '0 offices'}
                     </p>
                     <div className="flex items-center gap-2">
                         <button

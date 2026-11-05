@@ -1,14 +1,14 @@
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { ArrowLeft, Loader2, X } from "lucide-react";
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Loader2, X } from 'lucide-react';
 import {
     type ChangeEvent,
     type FormEvent,
     type ReactNode,
     useEffect,
     useState,
-} from "react";
+} from 'react';
 // Same layout as the complaints list page. Change if yours differs.
-import FieldLayout from "@/layouts/FieldLayouts";
+import FieldLayout from '@/layouts/FieldLayouts';
 
 // ───────── Types ─────────
 type Complaint = {
@@ -89,95 +89,95 @@ type Options = {
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 const STATUS_CLS: Record<string, string> = {
-    recorded: "bg-slate-100 text-slate-700",
-    for_review: "bg-sky-100 text-sky-800",
-    for_assignment: "bg-amber-100 text-amber-800",
-    assigned: "bg-blue-100 text-blue-800",
-    under_investigation: "bg-indigo-100 text-indigo-800",
-    for_info: "bg-orange-100 text-orange-800",
-    for_rdac_review: "bg-purple-100 text-purple-800",
-    resolved: "bg-green-100 text-green-800",
-    closed: "bg-emerald-100 text-emerald-900",
+    recorded: 'bg-slate-100 text-slate-700',
+    for_review: 'bg-sky-100 text-sky-800',
+    for_assignment: 'bg-amber-100 text-amber-800',
+    assigned: 'bg-blue-100 text-blue-800',
+    under_investigation: 'bg-indigo-100 text-indigo-800',
+    for_info: 'bg-orange-100 text-orange-800',
+    for_rdac_review: 'bg-purple-100 text-purple-800',
+    resolved: 'bg-green-100 text-green-800',
+    closed: 'bg-emerald-100 text-emerald-900',
 };
 const PRIORITY_CLS: Record<string, string> = {
-    urgent: "bg-red-100 text-red-800",
-    high: "bg-orange-100 text-orange-800",
-    normal: "bg-slate-100 text-slate-700",
-    low: "bg-slate-50 text-slate-500",
+    urgent: 'bg-red-100 text-red-800',
+    high: 'bg-orange-100 text-orange-800',
+    normal: 'bg-slate-100 text-slate-700',
+    low: 'bg-slate-50 text-slate-500',
 };
 const CHANNELS: Record<string, string> = {
-    phone: "Phone call",
-    email: "Email",
-    letter: "Letter",
-    walk_in: "Walk-in",
-    referral: "Referral",
-    social_media: "Social media",
-    other: "Other",
+    phone: 'Phone call',
+    email: 'Email',
+    letter: 'Letter',
+    walk_in: 'Walk-in',
+    referral: 'Referral',
+    social_media: 'Social media',
+    other: 'Other',
 };
 const WAIT: Record<
-    "status" | "update" | "ack",
+    'status' | 'update' | 'ack',
     { title: string; steps: string[] }
 > = {
     status: {
-        title: "Updating complaint status",
+        title: 'Updating complaint status',
         steps: [
-            "Saving the new status",
-            "Sending notification emails to the concerned staff",
+            'Saving the new status',
+            'Sending notification emails to the concerned staff',
         ],
     },
     update: {
-        title: "Saving investigation update",
+        title: 'Saving investigation update',
         steps: [
-            "Saving the update and photos",
-            "Sending notification emails to the concerned staff",
+            'Saving the update and photos',
+            'Sending notification emails to the concerned staff',
         ],
     },
     ack: {
-        title: "Acknowledging assignment",
+        title: 'Acknowledging assignment',
         steps: [
-            "Recording the acknowledgement",
-            "Sending notification emails to RDAC",
+            'Recording the acknowledgement',
+            'Sending notification emails to RDAC',
         ],
     },
 };
 
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
 const parse = (s: string) =>
-    new Date(s.length <= 10 ? `${s}T00:00` : s.replace(" ", "T"));
+    new Date(s.length <= 10 ? `${s}T00:00` : s.replace(' ', 'T'));
 const fmt = (s: string | null) =>
     s
-        ? parse(s).toLocaleString("en-PH", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
+        ? parse(s).toLocaleString('en-PH', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
           })
-        : "—";
+        : '—';
 const fmtDate = (s: string | null) =>
     s
-        ? parse(s).toLocaleDateString("en-PH", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
+        ? parse(s).toLocaleDateString('en-PH', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
           })
-        : "—";
+        : '—';
 const toLocalInput = (s: string | null) =>
-    s ? s.replace(" ", "T").slice(0, 16) : "";
+    s ? s.replace(' ', 'T').slice(0, 16) : '';
 
-const pad = (n: number) => String(n).padStart(2, "0");
+const pad = (n: number) => String(n).padStart(2, '0');
 const nowLocal = () => {
     const d = new Date();
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
 const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
-const card = "rounded-2xl border border-slate-200 bg-white p-6";
-const h3Cls = "mb-3 font-semibold text-slate-700";
+    'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500';
+const lblCls = 'mb-1 block text-xs font-semibold text-slate-500';
+const card = 'rounded-2xl border border-slate-200 bg-white p-6';
+const h3Cls = 'mb-3 font-semibold text-slate-700';
 const primaryBtn =
-    "w-full rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-60";
+    'w-full rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-60';
 
 function Field({
     label,
@@ -211,7 +211,7 @@ function Info({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div>
             <dt className="text-xs font-semibold text-slate-500">{label}</dt>
-            <dd className="mt-0.5 break-words text-sm">{value || "—"}</dd>
+            <dd className="mt-0.5 text-sm break-words">{value || '—'}</dd>
         </div>
     );
 }
@@ -226,14 +226,14 @@ const Banner = ({ children }: { children: ReactNode }) => (
 );
 
 const ACTION_LABELS: Record<string, string> = {
-    inspection: "Inspection",
-    investigation_update: "Investigation update",
-    finding: "Finding",
-    recommendation: "Recommendation",
-    info_request: "Information request",
-    rdac_remark: "RDAC remark",
-    follow_up: "Follow-up",
-    internal_remark: "Internal remark",
+    inspection: 'Inspection',
+    investigation_update: 'Investigation update',
+    finding: 'Finding',
+    recommendation: 'Recommendation',
+    info_request: 'Information request',
+    rdac_remark: 'RDAC remark',
+    follow_up: 'Follow-up',
+    internal_remark: 'Internal remark',
 };
 
 const Empty = ({ children }: { children: ReactNode }) => (
@@ -247,14 +247,14 @@ function HistoryList({ rows }: { rows: HistoryRow[] }) {
             {rows.map((r, i) => (
                 <li key={i} className="border-l-2 border-slate-300 pl-4">
                     <p className="text-sm font-semibold">
-                        {r.from_name ? `${r.from_name} → ` : ""}
+                        {r.from_name ? `${r.from_name} → ` : ''}
                         {r.to_name}
                     </p>
                     {r.reason && (
-                        <p className="mt-0.5 break-words text-sm">{r.reason}</p>
+                        <p className="mt-0.5 text-sm break-words">{r.reason}</p>
                     )}
                     <p className="mt-1 text-xs text-slate-400">
-                        {r.full_name ?? "Unknown"} · {fmt(r.created_at)}
+                        {r.full_name ?? 'Unknown'} · {fmt(r.created_at)}
                     </p>
                 </li>
             ))}
@@ -274,21 +274,21 @@ function AssignmentList({ rows }: { rows: AssignmentRow[] }) {
             {rows.map((a, i) => (
                 <li
                     key={i}
-                    className={`border-l-2 pl-4 ${a.is_current ? "border-green-500" : "border-slate-300"}`}
+                    className={`border-l-2 pl-4 ${a.is_current ? 'border-green-500' : 'border-slate-300'}`}
                 >
                     <p className="text-sm font-semibold">
-                        {a.from_name ? `${a.from_name} → ` : ""}
+                        {a.from_name ? `${a.from_name} → ` : ''}
                         {a.to_name}
                         <span className="ml-2 text-xs font-medium text-slate-500">
-                            {cap(a.assignment_type)} ·{" "}
-                            {a.is_current ? "current" : "ended"}
+                            {cap(a.assignment_type)} ·{' '}
+                            {a.is_current ? 'current' : 'ended'}
                         </span>
                     </p>
                     {a.reason && (
-                        <p className="mt-1 break-words text-sm">{a.reason}</p>
+                        <p className="mt-1 text-sm break-words">{a.reason}</p>
                     )}
                     <p className="mt-1 text-xs text-slate-400">
-                        Assigned by {a.by_name ?? "Unknown"} ·{" "}
+                        Assigned by {a.by_name ?? 'Unknown'} ·{' '}
                         {fmt(a.created_at)}
                         {a.target_date && ` · target ${fmtDate(a.target_date)}`}
                         {a.acknowledged_at &&
@@ -309,7 +309,7 @@ function ActionList({ rows }: { rows: ActionRow[] }) {
                     <p className="text-sm font-semibold">
                         {ACTION_LABELS[a.action_type] ?? a.action_type}
                     </p>
-                    <p className="mt-1 whitespace-pre-line break-words text-sm">
+                    <p className="mt-1 text-sm break-words whitespace-pre-line">
                         {a.details}
                     </p>
                     {a.photos.length > 0 && (
@@ -326,7 +326,7 @@ function ActionList({ rows }: { rows: ActionRow[] }) {
                                         src={`/field/documents/${p.document_id}`}
                                         alt={
                                             p.original_name ||
-                                            "Investigation photo"
+                                            'Investigation photo'
                                         }
                                         loading="lazy"
                                         className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
@@ -336,8 +336,8 @@ function ActionList({ rows }: { rows: ActionRow[] }) {
                         </div>
                     )}
                     <p className="mt-1 text-xs text-slate-400">
-                        {a.full_name ?? "Unknown"}
-                        {a.office_name && ` · ${a.office_name}`} ·{" "}
+                        {a.full_name ?? 'Unknown'}
+                        {a.office_name && ` · ${a.office_name}`} ·{' '}
                         {fmt(a.action_date)}
                     </p>
                 </li>
@@ -347,25 +347,25 @@ function ActionList({ rows }: { rows: ActionRow[] }) {
 }
 
 const editInit = (c: Complaint) => ({
-    title: c.title ?? "",
-    category_id: c.category_id ? String(c.category_id) : "",
-    priority: c.priority ?? "normal",
-    description: c.description ?? "",
-    received_channel: c.received_channel ?? "",
+    title: c.title ?? '',
+    category_id: c.category_id ? String(c.category_id) : '',
+    priority: c.priority ?? 'normal',
+    description: c.description ?? '',
+    received_channel: c.received_channel ?? '',
     received_at: toLocalInput(c.received_at),
     incident_datetime: toLocalInput(c.incident_datetime),
-    target_date: c.target_date ? c.target_date.slice(0, 10) : "",
-    province_id: c.province_id ? String(c.province_id) : "",
-    municipality: c.municipality ?? "",
-    barangay: c.barangay ?? "",
-    specific_location: c.specific_location ?? "",
+    target_date: c.target_date ? c.target_date.slice(0, 10) : '',
+    province_id: c.province_id ? String(c.province_id) : '',
+    municipality: c.municipality ?? '',
+    barangay: c.barangay ?? '',
+    specific_location: c.specific_location ?? '',
     is_anonymous: !!c.is_anonymous,
-    complainant_name: c.complainant_name ?? "",
-    complainant_contact: c.complainant_contact ?? "",
-    complainant_email: c.complainant_email ?? "",
+    complainant_name: c.complainant_name ?? '',
+    complainant_contact: c.complainant_contact ?? '',
+    complainant_email: c.complainant_email ?? '',
 });
 type EditData = ReturnType<typeof editInit>;
-type TextKey = Exclude<keyof EditData, "is_anonymous">;
+type TextKey = Exclude<keyof EditData, 'is_anonymous'>;
 
 // ───────── Page ─────────
 export default function FieldComplaintView({
@@ -383,20 +383,20 @@ export default function FieldComplaintView({
     const base = `/field/complaints/${c.complaint_id}`;
 
     // ---- Toast from the server's flash message ----
-    const [toast, setToast] = useState("");
+    const [toast, setToast] = useState('');
     const flash: string | undefined = page.props.flash?.success;
     useEffect(() => {
         if (!flash) return;
         setToast(flash);
-        const t = setTimeout(() => setToast(""), 4500);
+        const t = setTimeout(() => setToast(''), 4500);
         return () => clearTimeout(t);
     }, [flash]);
 
     // ---- Forms ----
     const ackForm = useForm({});
-    const statusForm = useForm({ to_status_id: "", reason: "" });
+    const statusForm = useForm({ to_status_id: '', reason: '' });
     const updateForm = useForm<{ details: string; photos: File[] }>({
-        details: "",
+        details: '',
         photos: [],
     });
     const editForm = useForm<EditData>(editInit(c));
@@ -406,12 +406,12 @@ export default function FieldComplaintView({
         f.errors as Record<string, string | undefined>;
     const setErrs = (f: any, e: Record<string, string>) => f.setError(e);
 
-    const waitKind: "status" | "update" | "ack" | null = ackForm.processing
-        ? "ack"
+    const waitKind: 'status' | 'update' | 'ack' | null = ackForm.processing
+        ? 'ack'
         : statusForm.processing
-          ? "status"
+          ? 'status'
           : updateForm.processing
-            ? "update"
+            ? 'update'
             : null;
 
     const submitAck = (e: FormEvent) => {
@@ -426,15 +426,15 @@ export default function FieldComplaintView({
         if (statusForm.processing) return;
         statusForm.clearErrors();
         if (!statusForm.data.to_status_id) {
-            setErrs(statusForm, { form: "Choose the next status." });
+            setErrs(statusForm, { form: 'Choose the next status.' });
             return;
         }
         if (!statusForm.data.reason.trim()) {
             setErrs(statusForm, {
-                reason: "Reason is required.",
-                form: "Please fix the highlighted fields.",
+                reason: 'Reason is required.',
+                form: 'Please fix the highlighted fields.',
             });
-            document.getElementById("status_reason")?.focus();
+            document.getElementById('status_reason')?.focus();
             return;
         }
         // from_status_id lets the server detect a stale page (409 conflict)
@@ -450,13 +450,13 @@ export default function FieldComplaintView({
         if (updateForm.processing) return;
         updateForm.clearErrors();
         if (!updateForm.data.details.trim()) {
-            setErrs(updateForm, { form: "Describe the investigation update." });
+            setErrs(updateForm, { form: 'Describe the investigation update.' });
             return;
         }
         if (view.photos_required && !updateForm.data.photos.length) {
             setErrs(updateForm, {
-                photos: "Attach at least one photo of the investigation.",
-                form: "Please fix the highlighted fields.",
+                photos: 'Attach at least one photo of the investigation.',
+                form: 'Please fix the highlighted fields.',
             });
             return;
         }
@@ -491,9 +491,9 @@ export default function FieldComplaintView({
             is_anonymous: checked,
             ...(checked
                 ? {
-                      complainant_name: "",
-                      complainant_contact: "",
-                      complainant_email: "",
+                      complainant_name: '',
+                      complainant_contact: '',
+                      complainant_email: '',
                   }
                 : {}),
         }));
@@ -502,7 +502,7 @@ export default function FieldComplaintView({
     const bindEdit = (k: TextKey) => ({
         id: `edit_${k}`,
         value: editForm.data[k],
-        "aria-invalid": editErr[k] ? (true as const) : undefined,
+        'aria-invalid': editErr[k] ? (true as const) : undefined,
         onChange: (
             e: ChangeEvent<
                 HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -513,14 +513,14 @@ export default function FieldComplaintView({
     // ---- Delete confirm ----
     const [confirmDel, setConfirmDel] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [deleteError, setDeleteError] = useState("");
+    const [deleteError, setDeleteError] = useState('');
     const doDelete = () => {
         if (deleting) return;
         setDeleting(true);
-        setDeleteError("");
+        setDeleteError('');
         router.delete(base, {
             onError: (e) =>
-                setDeleteError(e.form || "This complaint cannot be deleted."),
+                setDeleteError(e.form || 'This complaint cannot be deleted.'),
             onFinish: () => setDeleting(false),
             // on success the controller redirects to the list with a flash message
         });
@@ -529,32 +529,32 @@ export default function FieldComplaintView({
     // Lock page scroll and close on Escape while a modal is open
     useEffect(() => {
         if (!editOpen && !confirmDel) return;
-        document.body.classList.add("overflow-hidden");
+        document.body.classList.add('overflow-hidden');
         const onKey = (e: KeyboardEvent) => {
-            if (e.key !== "Escape") return;
+            if (e.key !== 'Escape') return;
             setEditOpen(false);
             setConfirmDel(false);
         };
-        document.addEventListener("keydown", onKey);
+        document.addEventListener('keydown', onKey);
         return () => {
-            document.body.classList.remove("overflow-hidden");
-            document.removeEventListener("keydown", onKey);
+            document.body.classList.remove('overflow-hidden');
+            document.removeEventListener('keydown', onKey);
         };
     }, [editOpen, confirmDel]);
 
     // ---- Derived display values ----
     let location = [
         c.specific_location,
-        c.barangay ? `Brgy. ${c.barangay}` : "",
+        c.barangay ? `Brgy. ${c.barangay}` : '',
         c.municipality,
         c.province_name,
     ]
         .filter(Boolean)
-        .join(", ");
+        .join(', ');
     if (c.is_outside_region)
         location = `${location} (outside Region IV-A)`.trim();
 
-    const forInfo = c.status_code === "for_info";
+    const forInfo = c.status_code === 'for_info';
     const ownerRestricted = view.is_owner && !view.can_edit && !view.can_delete;
     const ackErr = errs(ackForm);
     const stErr = errs(statusForm);
@@ -581,7 +581,7 @@ export default function FieldComplaintView({
                             {c.reference_no}
                         </p>
                         <h2
-                            className="mt-1 break-words text-2xl text-[#0f3d2e]"
+                            className="mt-1 text-2xl break-words text-[#0f3d2e]"
                             style={serif}
                         >
                             {c.title}
@@ -589,12 +589,12 @@ export default function FieldComplaintView({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <span
-                            className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_CLS[c.status_code] ?? "bg-slate-100 text-slate-700"}`}
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_CLS[c.status_code] ?? 'bg-slate-100 text-slate-700'}`}
                         >
                             {c.status_name}
                         </span>
                         <span
-                            className={`rounded-full px-3 py-1 text-sm font-medium ${PRIORITY_CLS[c.priority] ?? ""}`}
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${PRIORITY_CLS[c.priority] ?? ''}`}
                         >
                             {cap(c.priority)} priority
                         </span>
@@ -616,7 +616,7 @@ export default function FieldComplaintView({
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setDeleteError("");
+                                    setDeleteError('');
                                     setConfirmDel(true);
                                 }}
                                 className="rounded-xl border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50"
@@ -640,12 +640,12 @@ export default function FieldComplaintView({
                         value={
                             c.incident_datetime
                                 ? fmt(c.incident_datetime)
-                                : "Unknown"
+                                : 'Unknown'
                         }
                     />
                     <Info
                         label="Responsible office"
-                        value={c.office_name ?? "Not yet assigned"}
+                        value={c.office_name ?? 'Not yet assigned'}
                     />
                     <Info
                         label="Target response date"
@@ -655,8 +655,8 @@ export default function FieldComplaintView({
                         label="Your role"
                         value={
                             is_primary
-                                ? "Primary office"
-                                : "Coordinating office"
+                                ? 'Primary office'
+                                : 'Coordinating office'
                         }
                     />
                     <Info label="Last updated" value={fmt(c.updated_at)} />
@@ -668,7 +668,7 @@ export default function FieldComplaintView({
                 <div className="space-y-6 lg:col-span-2">
                     <section className={card}>
                         <h3 className={h3Cls}>Description</h3>
-                        <p className="whitespace-pre-line break-words text-sm">
+                        <p className="text-sm break-words whitespace-pre-line">
                             {c.description}
                         </p>
                     </section>
@@ -688,8 +688,8 @@ export default function FieldComplaintView({
                 <div className="space-y-6">
                     <section className={card}>
                         <h3 className={h3Cls}>Location</h3>
-                        <p className="break-words text-sm">
-                            {location || "Unknown"}
+                        <p className="text-sm break-words">
+                            {location || 'Unknown'}
                         </p>
                     </section>
                     <section className={card}>
@@ -738,7 +738,7 @@ export default function FieldComplaintView({
                                 <button
                                     type="submit"
                                     disabled={ackForm.processing}
-                                    className="w-full rounded-xl bg-[#0f3d2e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#15803d] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:opacity-60"
+                                    className="w-full rounded-xl bg-[#0f3d2e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#15803d] focus:ring-4 focus:ring-green-200 focus:outline-none disabled:opacity-60"
                                 >
                                     Acknowledge
                                 </button>
@@ -751,13 +751,13 @@ export default function FieldComplaintView({
                         <section className={card}>
                             <h3 className="mb-2 font-semibold text-slate-700">
                                 {forInfo
-                                    ? "Additional information"
-                                    : "Investigation update"}
+                                    ? 'Additional information'
+                                    : 'Investigation update'}
                             </h3>
                             <p className="mb-3 text-xs text-slate-500">
                                 {forInfo
-                                    ? "Submit supplementary information or supporting photos without changing the original complaint."
-                                    : "While this complaint is under investigation, add a written update and attach photos (JPEG, PNG, WebP or GIF, up to 8 files, 5 MB each)."}
+                                    ? 'Submit supplementary information or supporting photos without changing the original complaint.'
+                                    : 'While this complaint is under investigation, add a written update and attach photos (JPEG, PNG, WebP or GIF, up to 8 files, 5 MB each).'}
                             </p>
                             <form
                                 onSubmit={submitUpdate}
@@ -780,7 +780,7 @@ export default function FieldComplaintView({
                                         value={updateForm.data.details}
                                         onChange={(e) =>
                                             updateForm.setData(
-                                                "details",
+                                                'details',
                                                 e.target.value,
                                             )
                                         }
@@ -803,7 +803,7 @@ export default function FieldComplaintView({
                                         }
                                         onChange={(e) =>
                                             updateForm.setData(
-                                                "photos",
+                                                'photos',
                                                 Array.from(
                                                     e.target.files ?? [],
                                                 ),
@@ -822,8 +822,8 @@ export default function FieldComplaintView({
                                     className={primaryBtn}
                                 >
                                     {view.photos_required
-                                        ? "Save update with photos"
-                                        : "Save additional information"}
+                                        ? 'Save update with photos'
+                                        : 'Save additional information'}
                                 </button>
                             </form>
                         </section>
@@ -854,7 +854,7 @@ export default function FieldComplaintView({
                                         value={statusForm.data.to_status_id}
                                         onChange={(e) =>
                                             statusForm.setData(
-                                                "to_status_id",
+                                                'to_status_id',
                                                 e.target.value,
                                             )
                                         }
@@ -890,7 +890,7 @@ export default function FieldComplaintView({
                                         value={statusForm.data.reason}
                                         onChange={(e) =>
                                             statusForm.setData(
-                                                "reason",
+                                                'reason',
                                                 e.target.value,
                                             )
                                         }
@@ -913,8 +913,8 @@ export default function FieldComplaintView({
                     ) : (
                         <p className="text-sm text-slate-400">
                             {is_primary
-                                ? "No status change is available for your office at this stage."
-                                : "Coordinating offices cannot change status. The primary office owns the case."}
+                                ? 'No status change is available for your office at this stage.'
+                                : 'Coordinating offices cannot change status. The primary office owns the case.'}
                         </p>
                     )}
 
@@ -929,7 +929,7 @@ export default function FieldComplaintView({
             {toast && (
                 <div
                     role="status"
-                    className="fixed bottom-5 right-5 z-50 rounded-xl bg-[#0f3d2e] px-4 py-3 text-sm text-white shadow-lg"
+                    className="fixed right-5 bottom-5 z-50 rounded-xl bg-[#0f3d2e] px-4 py-3 text-sm text-white shadow-lg"
                 >
                     {toast}
                 </div>
@@ -953,7 +953,7 @@ export default function FieldComplaintView({
                             {WAIT[waitKind].title}
                         </h2>
                         <p>Please keep this page open. The system is:</p>
-                        <ol className="ml-5 mt-2 list-decimal leading-relaxed">
+                        <ol className="mt-2 ml-5 list-decimal leading-relaxed">
                             {WAIT[waitKind].steps.map((s) => (
                                 <li key={s}>{s}</li>
                             ))}
@@ -1000,9 +1000,9 @@ export default function FieldComplaintView({
                                 type="button"
                                 disabled={deleting}
                                 onClick={doDelete}
-                                className="rounded-xl bg-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:opacity-60"
+                                className="rounded-xl bg-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-800 focus:ring-4 focus:ring-red-200 focus:outline-none disabled:opacity-60"
                             >
-                                {deleting ? "Deleting..." : "Delete"}
+                                {deleting ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>
                     </div>
@@ -1049,7 +1049,7 @@ export default function FieldComplaintView({
                                     >
                                         {editErr.form ||
                                             editErr.message ||
-                                            "Please fix the highlighted fields."}
+                                            'Please fix the highlighted fields.'}
                                     </div>
                                 )}
                                 <p className="text-sm text-slate-500">
@@ -1077,7 +1077,7 @@ export default function FieldComplaintView({
                                             className={fieldCls}
                                             maxLength={200}
                                             autoFocus
-                                            {...bindEdit("title")}
+                                            {...bindEdit('title')}
                                         />
                                     </Field>
                                     <div className="grid gap-4 sm:grid-cols-2">
@@ -1088,7 +1088,7 @@ export default function FieldComplaintView({
                                         >
                                             <select
                                                 className={fieldCls}
-                                                {...bindEdit("category_id")}
+                                                {...bindEdit('category_id')}
                                             >
                                                 <option value="">
                                                     Select category
@@ -1110,7 +1110,7 @@ export default function FieldComplaintView({
                                         >
                                             <select
                                                 className={fieldCls}
-                                                {...bindEdit("priority")}
+                                                {...bindEdit('priority')}
                                             >
                                                 <option value="low">Low</option>
                                                 <option value="normal">
@@ -1138,7 +1138,7 @@ export default function FieldComplaintView({
                                         <textarea
                                             rows={5}
                                             className={fieldCls}
-                                            {...bindEdit("description")}
+                                            {...bindEdit('description')}
                                         />
                                     </Field>
                                 </fieldset>
@@ -1161,7 +1161,7 @@ export default function FieldComplaintView({
                                             <select
                                                 className={fieldCls}
                                                 {...bindEdit(
-                                                    "received_channel",
+                                                    'received_channel',
                                                 )}
                                             >
                                                 <option value="">
@@ -1193,7 +1193,7 @@ export default function FieldComplaintView({
                                                 type="datetime-local"
                                                 className={fieldCls}
                                                 max={nowLocal()}
-                                                {...bindEdit("received_at")}
+                                                {...bindEdit('received_at')}
                                             />
                                         </Field>
                                         <Field
@@ -1207,7 +1207,7 @@ export default function FieldComplaintView({
                                                 className={fieldCls}
                                                 max={nowLocal()}
                                                 {...bindEdit(
-                                                    "incident_datetime",
+                                                    'incident_datetime',
                                                 )}
                                             />
                                         </Field>
@@ -1221,7 +1221,7 @@ export default function FieldComplaintView({
                                             <input
                                                 type="date"
                                                 className={fieldCls}
-                                                {...bindEdit("target_date")}
+                                                {...bindEdit('target_date')}
                                             />
                                         </Field>
                                     </div>
@@ -1239,7 +1239,7 @@ export default function FieldComplaintView({
                                         >
                                             <select
                                                 className={fieldCls}
-                                                {...bindEdit("province_id")}
+                                                {...bindEdit('province_id')}
                                             >
                                                 <option value="">
                                                     Unknown
@@ -1262,7 +1262,7 @@ export default function FieldComplaintView({
                                             <input
                                                 className={fieldCls}
                                                 maxLength={100}
-                                                {...bindEdit("municipality")}
+                                                {...bindEdit('municipality')}
                                             />
                                         </Field>
                                         <Field
@@ -1273,7 +1273,7 @@ export default function FieldComplaintView({
                                             <input
                                                 className={fieldCls}
                                                 maxLength={100}
-                                                {...bindEdit("barangay")}
+                                                {...bindEdit('barangay')}
                                             />
                                         </Field>
                                     </div>
@@ -1285,7 +1285,7 @@ export default function FieldComplaintView({
                                         <input
                                             className={fieldCls}
                                             maxLength={255}
-                                            {...bindEdit("specific_location")}
+                                            {...bindEdit('specific_location')}
                                         />
                                     </Field>
                                 </fieldset>
@@ -1321,7 +1321,7 @@ export default function FieldComplaintView({
                                                     editForm.data.is_anonymous
                                                 }
                                                 {...bindEdit(
-                                                    "complainant_name",
+                                                    'complainant_name',
                                                 )}
                                             />
                                         </Field>
@@ -1338,7 +1338,7 @@ export default function FieldComplaintView({
                                                     editForm.data.is_anonymous
                                                 }
                                                 {...bindEdit(
-                                                    "complainant_contact",
+                                                    'complainant_contact',
                                                 )}
                                             />
                                         </Field>
@@ -1356,7 +1356,7 @@ export default function FieldComplaintView({
                                                     editForm.data.is_anonymous
                                                 }
                                                 {...bindEdit(
-                                                    "complainant_email",
+                                                    'complainant_email',
                                                 )}
                                             />
                                         </Field>
@@ -1374,11 +1374,11 @@ export default function FieldComplaintView({
                                     <button
                                         type="submit"
                                         disabled={editForm.processing}
-                                        className="rounded-xl bg-[#15803d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="rounded-xl bg-[#15803d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {editForm.processing
-                                            ? "Saving..."
-                                            : "Save changes"}
+                                            ? 'Saving...'
+                                            : 'Save changes'}
                                     </button>
                                 </div>
                             </form>

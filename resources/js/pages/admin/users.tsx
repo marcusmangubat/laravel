@@ -1,7 +1,7 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Plus, Search, X } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import AdminLayout from "@/layouts/admin-layout";
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Plus, Search, X } from 'lucide-react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import AdminLayout from '@/layouts/admin-layout';
 
 // ───────── Types (match what UserController sends) ─────────
 type Account = {
@@ -34,29 +34,29 @@ type Office = {
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 aria-[invalid=true]:border-red-500";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
+    'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 aria-[invalid=true]:border-red-500';
+const lblCls = 'mb-1 block text-xs font-semibold text-slate-500';
 
 const fmt = (s: string | null) =>
     s
-        ? new Date(s.replace(" ", "T")).toLocaleString("en-PH", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
+        ? new Date(s.replace(' ', 'T')).toLocaleString('en-PH', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
           })
-        : "Never";
+        : 'Never';
 
 const officeLabel = (o: Office) =>
-    o.office_name + (o.office_code ? ` (${o.office_code})` : "");
+    o.office_name + (o.office_code ? ` (${o.office_code})` : '');
 
 /** 12 random characters from a safe alphabet, with at least one letter and one number. */
 function generatePassword(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
     for (;;) {
         const bytes = crypto.getRandomValues(new Uint32Array(12));
-        const p = Array.from(bytes, (b) => chars[b % chars.length]).join("");
+        const p = Array.from(bytes, (b) => chars[b % chars.length]).join('');
         if (/[A-Za-z]/.test(p) && /\d/.test(p)) return p;
     }
 }
@@ -113,14 +113,14 @@ export default function Users({
     const go = (next: Filters, pageNo = 1) => {
         const params: Record<string, string | number> = {};
         (Object.keys(next) as (keyof Filters)[]).forEach((k) => {
-            if (next[k] !== "") params[k] = next[k];
+            if (next[k] !== '') params[k] = next[k];
         });
         if (pageNo > 1) params.page = pageNo;
-        router.get("/admin/users", params, {
+        router.get('/admin/users', params, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
-            only: ["users", "filters", "errors"],
+            only: ['users', 'filters', 'errors'],
             onStart: () => setLoading(true),
             onFinish: () => setLoading(false),
         });
@@ -128,7 +128,7 @@ export default function Users({
     const setFilter = (key: keyof Filters, value: string) => {
         const next = { ...f, [key]: value };
         setF(next);
-        if (key === "q") {
+        if (key === 'q') {
             clearTimeout(debounce.current);
             debounce.current = setTimeout(() => go(next), 350);
             return;
@@ -136,18 +136,18 @@ export default function Users({
         go(next);
     };
     const clearFilters = () => {
-        const empty: Filters = { q: "", office_id: "", is_active: "" };
+        const empty: Filters = { q: '', office_id: '', is_active: '' };
         setF(empty);
         go(empty);
     };
 
     // ---- Toast from the server's flash message ----
-    const [toast, setToast] = useState("");
+    const [toast, setToast] = useState('');
     const flash: string | undefined = page.props.flash?.success;
     useEffect(() => {
         if (!flash) return;
         setToast(flash);
-        const t = setTimeout(() => setToast(""), 6000);
+        const t = setTimeout(() => setToast(''), 6000);
         return () => clearTimeout(t);
     }, [flash]);
 
@@ -170,14 +170,14 @@ export default function Users({
     const [open, setOpen] = useState(false);
     const [showPwd, setShowPwd] = useState(false);
     const form = useForm({
-        office_id: "",
-        full_name: "",
-        username: "",
-        email: "",
-        position_title: "",
-        contact_number: "",
-        password: "",
-        password_confirmation: "",
+        office_id: '',
+        full_name: '',
+        username: '',
+        email: '',
+        position_title: '',
+        contact_number: '',
+        password: '',
+        password_confirmation: '',
     });
     const { data, setData, errors } = form;
 
@@ -191,19 +191,19 @@ export default function Users({
 
     useEffect(() => {
         if (!open) return;
-        document.body.classList.add("overflow-hidden");
-        const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeForm();
-        document.addEventListener("keydown", onKey);
+        document.body.classList.add('overflow-hidden');
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeForm();
+        document.addEventListener('keydown', onKey);
         return () => {
-            document.body.classList.remove("overflow-hidden");
-            document.removeEventListener("keydown", onKey);
+            document.body.classList.remove('overflow-hidden');
+            document.removeEventListener('keydown', onKey);
         };
     }, [open]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         if (form.processing) return;
-        form.post("/admin/users", {
+        form.post('/admin/users', {
             preserveScroll: true,
             onSuccess: () => {
                 closeForm();
@@ -222,14 +222,14 @@ export default function Users({
 
     const err = (k: keyof typeof errors) => errors[k] as string | undefined;
     const bad = (k: keyof typeof errors) => (errors[k] ? true : undefined);
-    const pwdType = showPwd ? "text" : "password";
+    const pwdType = showPwd ? 'text' : 'password';
 
     const start = users.total
         ? (users.current_page - 1) * users.per_page + 1
         : 0;
     const end = Math.min(users.current_page * users.per_page, users.total);
     const filterError = Object.values(page.props.errors ?? {}).find(
-        (m) => typeof m === "string",
+        (m) => typeof m === 'string',
     ) as string | undefined;
 
     return (
@@ -239,8 +239,8 @@ export default function Users({
             {/* Toolbar */}
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="relative min-w-[16rem] max-w-md flex-1">
-                        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <div className="relative max-w-md min-w-[16rem] flex-1">
+                        <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <label htmlFor="q" className="sr-only">
                             Search accounts
                         </label>
@@ -250,13 +250,13 @@ export default function Users({
                             className={`${fieldCls} pl-10`}
                             placeholder="Search name, username, email or office"
                             value={f.q}
-                            onChange={(e) => setFilter("q", e.target.value)}
+                            onChange={(e) => setFilter('q', e.target.value)}
                         />
                     </div>
                     <button
                         type="button"
                         onClick={openForm}
-                        className="rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200"
+                        className="rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none"
                     >
                         <Plus className="mr-2 inline h-4 w-4" />
                         Create account
@@ -270,7 +270,7 @@ export default function Users({
                             className={fieldCls}
                             value={f.office_id}
                             onChange={(e) =>
-                                setFilter("office_id", e.target.value)
+                                setFilter('office_id', e.target.value)
                             }
                         >
                             <option value="">All offices</option>
@@ -287,7 +287,7 @@ export default function Users({
                             className={fieldCls}
                             value={f.is_active}
                             onChange={(e) =>
-                                setFilter("is_active", e.target.value)
+                                setFilter('is_active', e.target.value)
                             }
                         >
                             <option value="">All</option>
@@ -318,19 +318,19 @@ export default function Users({
             {/* Table */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <div
-                    className={`overflow-x-auto transition-opacity ${loading ? "opacity-50" : ""}`}
+                    className={`overflow-x-auto transition-opacity ${loading ? 'opacity-50' : ''}`}
                     aria-busy={loading}
                 >
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50">
                             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
                                 {[
-                                    "Name",
-                                    "Username",
-                                    "Office",
-                                    "Status",
-                                    "Last sign-in",
-                                    "Actions",
+                                    'Name',
+                                    'Username',
+                                    'Office',
+                                    'Status',
+                                    'Last sign-in',
+                                    'Actions',
                                 ].map((h) => (
                                     <th
                                         key={h}
@@ -359,27 +359,27 @@ export default function Users({
                                                         u.email}
                                                 </p>
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 {u.username}
                                                 <p className="text-xs text-slate-400">
                                                     {u.email}
                                                 </p>
                                             </td>
                                             <td className="px-4 py-3 text-slate-600">
-                                                {u.office_name || "—"}
+                                                {u.office_name || '—'}
                                                 {u.office_code && (
                                                     <p className="text-xs text-slate-400">
                                                         {u.office_code}
                                                     </p>
                                                 )}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <span
-                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}
+                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'}`}
                                                 >
                                                     {active
-                                                        ? "Active"
-                                                        : "Deactivated"}
+                                                        ? 'Active'
+                                                        : 'Deactivated'}
                                                 </span>
                                                 {u.is_locked === 1 && (
                                                     <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -393,19 +393,19 @@ export default function Users({
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
+                                            <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
                                                 {fmt(u.last_login_at)}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <button
                                                     type="button"
                                                     onClick={() => toggle(u)}
                                                     disabled={busyId !== null}
-                                                    className={`text-sm font-semibold hover:underline disabled:opacity-50 ${active ? "text-red-700" : "text-[#15803d]"}`}
+                                                    className={`text-sm font-semibold hover:underline disabled:opacity-50 ${active ? 'text-red-700' : 'text-[#15803d]'}`}
                                                 >
                                                     {active
-                                                        ? "Deactivate"
-                                                        : "Activate"}
+                                                        ? 'Deactivate'
+                                                        : 'Activate'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -430,7 +430,7 @@ export default function Users({
                     <p>
                         {users.total
                             ? `Showing ${start}–${end} of ${users.total.toLocaleString()}`
-                            : "0 results"}
+                            : '0 results'}
                     </p>
                     <div className="flex items-center gap-2">
                         <button
@@ -460,7 +460,7 @@ export default function Users({
             {toast && (
                 <div
                     role="status"
-                    className="fixed bottom-5 right-5 z-50 max-w-md rounded-xl bg-[#0f3d2e] px-4 py-3 text-sm text-white shadow-lg"
+                    className="fixed right-5 bottom-5 z-50 max-w-md rounded-xl bg-[#0f3d2e] px-4 py-3 text-sm text-white shadow-lg"
                 >
                     {toast}
                 </div>
@@ -518,16 +518,16 @@ export default function Users({
                                     label="Office"
                                     htmlFor="office_id"
                                     required
-                                    error={err("office_id")}
+                                    error={err('office_id')}
                                 >
                                     <select
                                         id="office_id"
                                         className={fieldCls}
-                                        aria-invalid={bad("office_id")}
+                                        aria-invalid={bad('office_id')}
                                         autoFocus
                                         value={data.office_id}
                                         onChange={(e) =>
-                                            setData("office_id", e.target.value)
+                                            setData('office_id', e.target.value)
                                         }
                                     >
                                         <option value="">Select office</option>
@@ -546,17 +546,17 @@ export default function Users({
                                     label="Full name"
                                     htmlFor="full_name"
                                     required
-                                    error={err("full_name")}
+                                    error={err('full_name')}
                                 >
                                     <input
                                         id="full_name"
                                         className={fieldCls}
                                         maxLength={150}
                                         autoComplete="name"
-                                        aria-invalid={bad("full_name")}
+                                        aria-invalid={bad('full_name')}
                                         value={data.full_name}
                                         onChange={(e) =>
-                                            setData("full_name", e.target.value)
+                                            setData('full_name', e.target.value)
                                         }
                                     />
                                 </Field>
@@ -566,7 +566,7 @@ export default function Users({
                                         label="Username"
                                         htmlFor="username"
                                         required
-                                        error={err("username")}
+                                        error={err('username')}
                                         hint="Letters, numbers, periods and underscores."
                                     >
                                         <input
@@ -574,11 +574,11 @@ export default function Users({
                                             className={fieldCls}
                                             maxLength={60}
                                             autoComplete="off"
-                                            aria-invalid={bad("username")}
+                                            aria-invalid={bad('username')}
                                             value={data.username}
                                             onChange={(e) =>
                                                 setData(
-                                                    "username",
+                                                    'username',
                                                     e.target.value,
                                                 )
                                             }
@@ -588,7 +588,7 @@ export default function Users({
                                         label="Email"
                                         htmlFor="email"
                                         required
-                                        error={err("email")}
+                                        error={err('email')}
                                     >
                                         <input
                                             id="email"
@@ -596,10 +596,10 @@ export default function Users({
                                             className={fieldCls}
                                             maxLength={150}
                                             autoComplete="off"
-                                            aria-invalid={bad("email")}
+                                            aria-invalid={bad('email')}
                                             value={data.email}
                                             onChange={(e) =>
-                                                setData("email", e.target.value)
+                                                setData('email', e.target.value)
                                             }
                                         />
                                     </Field>
@@ -609,7 +609,7 @@ export default function Users({
                                     <Field
                                         label="Position"
                                         htmlFor="position_title"
-                                        error={err("position_title")}
+                                        error={err('position_title')}
                                     >
                                         <input
                                             id="position_title"
@@ -619,7 +619,7 @@ export default function Users({
                                             value={data.position_title}
                                             onChange={(e) =>
                                                 setData(
-                                                    "position_title",
+                                                    'position_title',
                                                     e.target.value,
                                                 )
                                             }
@@ -628,7 +628,7 @@ export default function Users({
                                     <Field
                                         label="Contact number"
                                         htmlFor="contact_number"
-                                        error={err("contact_number")}
+                                        error={err('contact_number')}
                                     >
                                         <input
                                             id="contact_number"
@@ -638,7 +638,7 @@ export default function Users({
                                             value={data.contact_number}
                                             onChange={(e) =>
                                                 setData(
-                                                    "contact_number",
+                                                    'contact_number',
                                                     e.target.value,
                                                 )
                                             }
@@ -651,7 +651,7 @@ export default function Users({
                                         label="Temporary password"
                                         htmlFor="password"
                                         required
-                                        error={err("password")}
+                                        error={err('password')}
                                         hint="At least 10 characters, with a letter and a number."
                                     >
                                         <input
@@ -660,11 +660,11 @@ export default function Users({
                                             className={fieldCls}
                                             maxLength={72}
                                             autoComplete="new-password"
-                                            aria-invalid={bad("password")}
+                                            aria-invalid={bad('password')}
                                             value={data.password}
                                             onChange={(e) =>
                                                 setData(
-                                                    "password",
+                                                    'password',
                                                     e.target.value,
                                                 )
                                             }
@@ -674,7 +674,7 @@ export default function Users({
                                         label="Confirm password"
                                         htmlFor="password_confirmation"
                                         required
-                                        error={err("password_confirmation")}
+                                        error={err('password_confirmation')}
                                     >
                                         <input
                                             id="password_confirmation"
@@ -683,12 +683,12 @@ export default function Users({
                                             maxLength={72}
                                             autoComplete="new-password"
                                             aria-invalid={bad(
-                                                "password_confirmation",
+                                                'password_confirmation',
                                             )}
                                             value={data.password_confirmation}
                                             onChange={(e) =>
                                                 setData(
-                                                    "password_confirmation",
+                                                    'password_confirmation',
                                                     e.target.value,
                                                 )
                                             }
@@ -728,11 +728,11 @@ export default function Users({
                                     <button
                                         type="submit"
                                         disabled={form.processing}
-                                        className="rounded-xl bg-[#15803d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="rounded-xl bg-[#15803d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {form.processing
-                                            ? "Saving..."
-                                            : "Create account"}
+                                            ? 'Saving...'
+                                            : 'Create account'}
                                     </button>
                                 </div>
                             </form>
