@@ -1,5 +1,5 @@
 const Ziggy = {
-    url: 'http:/\/localhost:8000',
+    url: 'http://localhost:8000',
     port: 8000,
     defaults: {},
     routes: {
