@@ -12,12 +12,27 @@ type Item = {
 };
 
 // DB timestamps are stored in UTC; show them in the viewer's local time.
-function ago(ts: string) {
-    const d = new Date(ts.replace(" ", "T") + "Z");
-    const s = Math.max(0, (Date.now() - d.getTime()) / 1000);
-    if (s < 60) return "Just now";
-    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+function ago(ts: string, now: number) {
+    const normalized = ts.trim().replace(" ", "T");
+
+    // Respect timestamps that already contain a timezone.
+    const d = new Date(normalized);
+
+    if (isNaN(d.getTime())) return "Invalid date";
+
+    const seconds = Math.floor((now - d.getTime()) / 1000);
+
+    if (seconds < 0) return "Time mismatch";
+
+    if (seconds < 60) return "Just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr ago`;
+
+    const days = Math.floor(seconds / 86400);
+
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+
     return d.toLocaleDateString("en-PH", {
         month: "short",
         day: "numeric",
@@ -33,7 +48,20 @@ export default function NotificationBell({ readUrl }: { readUrl: string }) {
     const items = notifications?.items ?? [];
 
     const [open, setOpen] = useState(false);
+    const [now, setNow] = useState(() => Date.now());
+
     const ref = useRef<HTMLDivElement>(null);
+
+    // Update relative timestamps every 30 seconds.
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                setNow(Date.now());
+            }
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const onClick = (e: MouseEvent) => {
@@ -137,7 +165,7 @@ export default function NotificationBell({ readUrl }: { readUrl: string }) {
                                                 {n.message}
                                             </span>
                                             <span className="mt-0.5 block text-xs text-slate-400">
-                                                {ago(n.created_at)}
+                                                {ago(n.created_at, now)}
                                             </span>
                                         </span>
                                     </button>
