@@ -175,8 +175,13 @@ class PasswordResetController extends Controller
             return $this->fail('That code is incorrect or has expired.');
         }
 
-        $user->password_hash = Hash::make($request->input('new_password'));
-        $user->save();
+        $user->forceFill([
+            'password_hash'         => Hash::make($request->input('new_password')),
+            'must_change_password'  => 0,
+            'password_changed_at'   => now(),
+            'failed_login_attempts' => 0,
+            'locked_until'          => null,
+        ])->save();
 
         Cache::forget($this->key($user, 'code'));
         Cache::forget($this->key($user, 'cooldown'));

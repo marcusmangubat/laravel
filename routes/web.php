@@ -49,7 +49,7 @@ Route::post('/password/reset', [PasswordResetController::class, 'handle'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'nocache'])->group(function () {
 
     // Redirect to the dashboard that matches the user's role
     Route::get('/dashboard', function () {
@@ -71,7 +71,7 @@ Route::middleware('auth')->group(function () {
 | ['auth', 'field', 'field.office']
 */
 
-Route::middleware(['auth', 'field'])->prefix('field')->name('field.')->group(function () {
+Route::middleware(['auth', 'nocache', 'field'])->prefix('field')->name('field.')->group(function () {
 
     // Dashboard & notifications
     Route::get('/dashboard', [FieldDashboardController::class, 'index'])->name('dashboard');
@@ -114,7 +114,7 @@ Route::middleware(['auth', 'field'])->prefix('field')->name('field.')->group(fun
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'nocache', 'admin'])->prefix('admin')->group(function () {
 
     // Dashboard & notifications
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');

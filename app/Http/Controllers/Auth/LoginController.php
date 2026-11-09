@@ -73,10 +73,10 @@ class LoginController extends Controller
         }
 
         // Temporary safeguard until password-change flow exists
-        if ($user->must_change_password) {
-            return back()->withErrors([
-                'login' => 'Password change is required. Contact the administrator until the password-change page is implemented.',
-            ]);
+         if ($user->must_change_password) {
+            $user->forceFill(['failed_login_attempts' => 0])->save();
+
+            return redirect()->route('login')->with('force_reset', $user->username);
         }
 
         // 8. Create an authenticated Laravel session
@@ -106,6 +106,8 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        Inertia::clearHistory(); // wipes Inertia's saved pages (Inertia v2)
+
+        return Inertia::location(route('login')); // full page reload, no cached state
     }
 }

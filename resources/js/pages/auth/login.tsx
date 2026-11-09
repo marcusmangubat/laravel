@@ -1,34 +1,36 @@
-import { FormEvent, useState } from 'react';
-import { router, usePage } from '@inertiajs/react';
-import axios from 'axios';
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { router, usePage } from "@inertiajs/react";
+import axios from "axios";
 
 export default function Login() {
-    const [login, setLogin] = useState('');
-    const [password, setPassword] = useState('');
+    const [login, setLogin] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState<'login' | 'reset'>('login');
-    const [step, setStep] = useState<'id' | 'code' | 'pwd'>('id');
-    const [rIdentifier, setRIdentifier] = useState('');
-    const [rCode, setRCode] = useState('');
-    const [rNew, setRNew] = useState('');
-    const [rConfirm, setRConfirm] = useState('');
+    const [mode, setMode] = useState<"login" | "reset">("login");
+    const [step, setStep] = useState<"id" | "code" | "pwd">("id");
+    const [rIdentifier, setRIdentifier] = useState("");
+    const [rCode, setRCode] = useState("");
+    const [rNew, setRNew] = useState("");
+    const [rConfirm, setRConfirm] = useState("");
     const [showNew, setShowNew] = useState(false);
     const [rBusy, setRBusy] = useState(false);
     const [rMsg, setRMsg] = useState<{
-        kind: 'ok' | 'err';
+        kind: "ok" | "err";
         text: string;
     } | null>(null);
     const [loginMsg, setLoginMsg] = useState<string | null>(null);
-    const { errors } = usePage().props as {
+    const { errors, flash } = usePage().props as {
         errors: Record<string, string>;
+        flash?: { force_reset?: string | null };
     };
+    const autoStarted = useRef(false);
 
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
         router.post(
-            '/login',
+            "/login",
             { login, password },
             {
                 onStart: () => setLoading(true),
@@ -38,12 +40,12 @@ export default function Login() {
     }
 
     const reqs = [
-        { label: 'At least 8 characters', ok: rNew.length >= 8 },
-        { label: 'At least one uppercase letter', ok: /[A-Z]/.test(rNew) },
-        { label: 'At least one lowercase letter', ok: /[a-z]/.test(rNew) },
-        { label: 'At least one number', ok: /\d/.test(rNew) },
+        { label: "At least 8 characters", ok: rNew.length >= 8 },
+        { label: "At least one uppercase letter", ok: /[A-Z]/.test(rNew) },
+        { label: "At least one lowercase letter", ok: /[a-z]/.test(rNew) },
+        { label: "At least one number", ok: /\d/.test(rNew) },
         {
-            label: 'At least one special character',
+            label: "At least one special character",
             ok: /[^A-Za-z0-9]/.test(rNew),
         },
     ];
@@ -53,7 +55,7 @@ export default function Login() {
         setRBusy(true);
         setRMsg(null);
         try {
-            const { data } = await axios.post('/password/reset', fields);
+            const { data } = await axios.post("/password/reset", fields);
             return data as { ok: boolean; message?: string };
         } catch (err: any) {
             const d = err?.response?.data;
@@ -61,11 +63,11 @@ export default function Login() {
                 ? (Object.values(d.errors)[0] as string[])[0]
                 : null;
             setRMsg({
-                kind: 'err',
+                kind: "err",
                 text:
                     first ||
                     d?.message ||
-                    'The request could not be completed.',
+                    "The request could not be completed.",
             });
             return null;
         } finally {
@@ -76,69 +78,93 @@ export default function Login() {
     function openReset() {
         setLoginMsg(null);
         setRMsg(null);
-        setStep('id');
-        setMode('reset');
+        setStep("id");
+        setMode("reset");
     }
 
     function backToLogin() {
-        setMode('login');
-        setStep('id');
-        setRCode('');
-        setRNew('');
-        setRConfirm('');
+        setMode("login");
+        setStep("id");
+        setRCode("");
+        setRNew("");
+        setRConfirm("");
         setRMsg(null);
     }
 
-    async function sendCode() {
-        if (!rIdentifier.trim()) {
+    useEffect(() => {
+        const id = flash?.force_reset;
+        if (!id || autoStarted.current) return;
+        autoStarted.current = true; // prevents a double email in React StrictMode (dev)
+
+        setLoginMsg(null);
+        setRIdentifier(id);
+        setStep("id");
+        setMode("reset");
+
+        void resetPost({ action: "request", identifier: id }).then((d) => {
+            if (d?.ok) {
+                setStep("code");
+                setRMsg({
+                    kind: "ok",
+                    text:
+                        "You must change your temporary password before signing in. " +
+                        (d.message ?? "A code was sent to your email."),
+                });
+            }
+        });
+    }, [flash?.force_reset]);
+
+    async function sendCode(identifier: string = rIdentifier) {
+        const id = identifier.trim();
+        if (!id) {
             return setRMsg({
-                kind: 'err',
-                text: 'Enter your username or email.',
+                kind: "err",
+                text: "Enter your username or email.",
             });
         }
         const d = await resetPost({
-            action: step === 'id' ? 'request' : 'resend',
-            identifier: rIdentifier.trim(),
+            action: step === "id" ? "request" : "resend",
+            identifier: id,
         });
         if (d?.ok) {
-            setStep('code');
-            setRMsg({ kind: 'ok', text: d.message ?? 'Code sent.' });
+            setStep("code");
+            setRMsg({ kind: "ok", text: d.message ?? "Code sent." });
         }
     }
 
     async function verifyCode() {
         if (rCode.length !== 6) {
             return setRMsg({
-                kind: 'err',
-                text: 'Enter the 6-digit verification code.',
+                kind: "err",
+                text: "Enter the 6-digit verification code.",
             });
         }
         const d = await resetPost({
-            action: 'verify',
+            action: "verify",
             identifier: rIdentifier.trim(),
             code: rCode,
         });
         if (d?.ok) {
-            setStep('pwd');
-            setRMsg({ kind: 'ok', text: d.message ?? 'Code verified.' });
+            setStep("pwd");
+            setRMsg({ kind: "ok", text: d.message ?? "Code verified." });
         }
     }
 
     async function saveNewPassword() {
         if (!reqsOk) {
             return setRMsg({
-                kind: 'err',
-                text: 'The new password does not meet the requirements.',
+                kind: "err",
+                text: "The new password does not meet the requirements.",
             });
         }
         if (rNew !== rConfirm) {
             return setRMsg({
-                kind: 'err',
-                text: 'The new passwords do not match.',
+                kind: "err",
+                text: "The new passwords do not match.",
             });
         }
         const d = await resetPost({
-            action: 'save',
+            action: "save",
             identifier: rIdentifier.trim(),
             code: rCode,
             new_password: rNew,
@@ -146,17 +172,17 @@ export default function Login() {
         });
         if (d?.ok) {
             backToLogin();
-            setLoginMsg(d.message ?? 'Password changed.');
+            setLoginMsg(d.message ?? "Password changed.");
         }
     }
 
     const inputBase =
-        'w-full rounded-lg border bg-white py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:ring-4';
+        "w-full rounded-lg border bg-white py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:ring-4";
     const inputOk =
-        'border-gray-300 focus:border-green-600 focus:ring-green-600/15';
+        "border-gray-300 focus:border-green-600 focus:ring-green-600/15";
     const inputErr =
-        'border-red-400 focus:border-red-500 focus:ring-red-500/15';
-    const plainInput = inputBase.replace('pl-11', 'pl-4');
+        "border-red-400 focus:border-red-500 focus:ring-red-500/15";
+    const plainInput = inputBase.replace("pl-11", "pl-4");
 
     return (
         <div className="grid min-h-screen lg:grid-cols-2">
@@ -207,15 +233,15 @@ export default function Login() {
                     </div>
 
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                        {mode === 'login' ? 'Sign in' : 'Change password'}
+                        {mode === "login" ? "Sign in" : "Change password"}
                     </h1>
                     <p className="mt-2 text-sm text-gray-500">
-                        {mode === 'login'
-                            ? 'Enter your credentials to continue.'
-                            : 'We will email a 6-digit code to the address on your account.'}
+                        {mode === "login"
+                            ? "Enter your credentials to continue."
+                            : "We will email a 6-digit code to the address on your account."}
                     </p>
 
-                    {mode === 'login' && loginMsg && (
+                    {mode === "login" && loginMsg && (
                         <div
                             role="status"
                             className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
@@ -224,7 +250,7 @@ export default function Login() {
                         </div>
                     )}
 
-                    {mode === 'login' && (
+                    {mode === "login" && (
                         <>
                             <form
                                 onSubmit={handleSubmit}
@@ -315,8 +341,8 @@ export default function Login() {
                                             id="password"
                                             type={
                                                 showPassword
-                                                    ? 'text'
-                                                    : 'password'
+                                                    ? "text"
+                                                    : "password"
                                             }
                                             value={password}
                                             onChange={(e) =>
@@ -334,8 +360,8 @@ export default function Login() {
                                             }
                                             aria-label={
                                                 showPassword
-                                                    ? 'Hide password'
-                                                    : 'Show password'
+                                                    ? "Hide password"
+                                                    : "Show password"
                                             }
                                             className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
                                         >
@@ -408,7 +434,7 @@ export default function Login() {
                                             />
                                         </svg>
                                     )}
-                                    {loading ? 'Signing in...' : 'Sign in'}
+                                    {loading ? "Signing in..." : "Sign in"}
                                 </button>
                             </form>
 
@@ -428,24 +454,24 @@ export default function Login() {
                         administrator.
                     </p>
 
-                    {mode === 'reset' && (
+                    {mode === "reset" && (
                         <div className="mt-8 space-y-5">
                             {rMsg && (
                                 <div
                                     role={
-                                        rMsg.kind === 'err' ? 'alert' : 'status'
+                                        rMsg.kind === "err" ? "alert" : "status"
                                     }
                                     className={`rounded-lg border px-4 py-3 text-sm ${
-                                        rMsg.kind === 'err'
-                                            ? 'border-red-200 bg-red-50 text-red-700'
-                                            : 'border-green-200 bg-green-50 text-green-800'
+                                        rMsg.kind === "err"
+                                            ? "border-red-200 bg-red-50 text-red-700"
+                                            : "border-green-200 bg-green-50 text-green-800"
                                     }`}
                                 >
                                     {rMsg.text}
                                 </div>
                             )}
 
-                            {step === 'id' && (
+                            {step === "id" && (
                                 <div>
                                     <label
                                         htmlFor="rIdentifier"
@@ -466,18 +492,18 @@ export default function Login() {
                                     />
                                     <button
                                         type="button"
-                                        onClick={sendCode}
+                                        onClick={() => sendCode()}
                                         disabled={rBusy}
                                         className="mt-5 w-full rounded-lg bg-green-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:opacity-60"
                                     >
                                         {rBusy
-                                            ? 'Sending...'
-                                            : 'Send verification code'}
+                                            ? "Sending..."
+                                            : "Send verification code"}
                                     </button>
                                 </div>
                             )}
 
-                            {step === 'code' && (
+                            {step === "code" && (
                                 <div>
                                     <label
                                         htmlFor="rCode"
@@ -495,7 +521,7 @@ export default function Login() {
                                             setRCode(
                                                 e.target.value.replace(
                                                     /\D/g,
-                                                    '',
+                                                    "",
                                                 ),
                                             )
                                         }
@@ -513,12 +539,12 @@ export default function Login() {
                                         disabled={rBusy}
                                         className="mt-4 w-full rounded-lg bg-green-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:opacity-60"
                                     >
-                                        {rBusy ? 'Verifying...' : 'Verify code'}
+                                        {rBusy ? "Verifying..." : "Verify code"}
                                     </button>
                                     <p className="mt-3 text-center">
                                         <button
                                             type="button"
-                                            onClick={sendCode}
+                                            onClick={() => sendCode()}
                                             disabled={rBusy}
                                             className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-60"
                                         >
@@ -528,7 +554,7 @@ export default function Login() {
                                 </div>
                             )}
 
-                            {step === 'pwd' && (
+                            {step === "pwd" && (
                                 <div className="space-y-5">
                                     <div>
                                         <label
@@ -539,7 +565,7 @@ export default function Login() {
                                         </label>
                                         <input
                                             id="rNew"
-                                            type={showNew ? 'text' : 'password'}
+                                            type={showNew ? "text" : "password"}
                                             value={rNew}
                                             onChange={(e) =>
                                                 setRNew(e.target.value)
@@ -554,10 +580,10 @@ export default function Login() {
                                                     key={r.label}
                                                     className={
                                                         r.ok
-                                                            ? 'text-green-700'
+                                                            ? "text-green-700"
                                                             : rNew
-                                                              ? 'text-red-600'
-                                                              : 'text-gray-500'
+                                                              ? "text-red-600"
+                                                              : "text-gray-500"
                                                     }
                                                 >
                                                     • {r.label}
@@ -574,7 +600,7 @@ export default function Login() {
                                         </label>
                                         <input
                                             id="rConfirm"
-                                            type={showNew ? 'text' : 'password'}
+                                            type={showNew ? "text" : "password"}
                                             value={rConfirm}
                                             onChange={(e) =>
                                                 setRConfirm(e.target.value)
@@ -600,8 +626,8 @@ export default function Login() {
                                         className="w-full rounded-lg bg-green-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:opacity-60"
                                     >
                                         {rBusy
-                                            ? 'Saving...'
-                                            : 'Save new password'}
+                                            ? "Saving..."
+                                            : "Save new password"}
                                     </button>
                                 </div>
                             )}

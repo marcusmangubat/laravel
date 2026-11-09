@@ -39,7 +39,16 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->only(
+                    'user_id',
+                    'username',
+                    'full_name',
+                    'role',
+                    'office_id'
+                ),
+            ],
+            'flash' => [
+                'force_reset' => fn () => $request->session()->get('force_reset'),
             ],
         ];
     }
