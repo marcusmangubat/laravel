@@ -4,7 +4,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import AdminLayout from "@/layouts/admin-layout";
 
-// ───────── Types ─────────
+//  Types
 type Opt = { id: number; name: string; requires_reason?: boolean };
 
 type Complaint = {
@@ -114,7 +114,7 @@ type Props = {
 
 type Errs = Record<string, string | undefined>;
 
-// ───────── Constants / helpers ─────────
+//  Constants / helpers
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 const STATUS_CLS: Record<string, string> = {
@@ -298,7 +298,7 @@ function Modal({
     );
 }
 
-// ───────── Page ─────────
+//  Page
 export default function ComplaintShow({
     complaint: c,
     history,

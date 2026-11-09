@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Field\StoreFieldComplaintRequest;
 use App\Models\Complaint;
 use App\Services\ComplaintWorkflow;
+use App\Services\ComplaintAdminNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -105,6 +106,16 @@ class ComplaintController extends Controller
 
         // The office always comes from the logged-in user, never from the form.
         $result = $workflow->recordFromFieldOffice((int) $user->user_id, (int) $user->office_id, $request->complaintData());
+
+        // Use the id from the workflow if it returns one, otherwise find this user's newest complaint
+        $complaintId = (int) ($result['complaint_id'] ?? $result['id'] ?? DB::table('complaints')
+            ->where('recorded_by', $user->user_id)
+            ->orderByDesc('complaint_id')
+            ->value('complaint_id'));
+
+        if ($complaintId) {
+            app(ComplaintAdminNotifier::class)->notify($complaintId, 'recorded', (int) $user->user_id, [], $request->ip());
+        }
 
         return redirect()->route('field.complaints')->with('success', $result['message']);
     }

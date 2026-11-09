@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Field;
 
 use App\Http\Controllers\Controller;
 use App\Services\ComplaintWorkflow;
+use App\Services\ComplaintAdminNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -113,16 +114,19 @@ private function findScoped(int $id): object
         ]);
     }
 
-    public function acknowledge(int $id)
+    public function acknowledge(Request $request, int $id)
     {
         $this->findScoped($id);
         $msg = $this->wf->acknowledge($id, (int) auth()->id(), $this->officeId());
+
+        app(ComplaintAdminNotifier::class)->notify($id, 'acknowledged', (int) auth()->id(), [], $request->ip());
+
         return back()->with('success', $msg);
     }
 
     public function status(Request $request, int $id)
     {
-        $this->findScoped($id);
+        $c = $this->findScoped($id);   // $c->status_name is the status BEFORE the change
         $v = $request->validate([
             'from_status_id' => ['required', 'integer'],
             'to_status_id' => ['required', 'integer'],
@@ -137,6 +141,12 @@ private function findScoped(int $id): object
             $id, (int) $v['from_status_id'], (int) $v['to_status_id'],
             (int) auth()->id(), self::ROLE, $v['reason'], $this->officeId()
         );
+
+        app(ComplaintAdminNotifier::class)->notify($id, 'status_changed', (int) auth()->id(), [
+            'from_status' => $c->status_name,
+            'reason'      => $v['reason'],
+        ], $request->ip());
+
         return back()->with('success', $msg);
     }
 
@@ -145,16 +155,24 @@ private function findScoped(int $id): object
         $this->findScoped($id);
         // The service validates details, photo count, size and real MIME type, and requires
         // photos while under investigation.
+        $photos = Arr::wrap($request->file('photos'));
         $msg = $this->wf->postInvestigationUpdate(
             $id, (int) auth()->id(), self::ROLE, $this->officeId(),
-            (string) $request->input('details', ''), Arr::wrap($request->file('photos'))
+            (string) $request->input('details', ''), $photos
         );
+
+        // Becomes "Additional information submitted" automatically when the status is For Additional Information
+        app(ComplaintAdminNotifier::class)->notify($id, 'update_added', (int) auth()->id(), [
+            'details'     => (string) $request->input('details', ''),
+            'photo_count' => count($photos),
+        ], $request->ip());
+
         return back()->with('success', $msg);
     }
 
-    public function edit(Request $request, int $id)
+   public function edit(Request $request, int $id)
     {
-        $this->findScoped($id);
+        $c = $this->findScoped($id);   // $c holds the values BEFORE the edit
 
         // If your list page's store() already has these rules (a FormRequest?), reuse them here.
         $v = $request->validate([
@@ -196,13 +214,45 @@ private function findScoped(int $id): object
             'target_date' => $v['target_date'] ?? null,
             // 'outside' is omitted on purpose: the edit form has no such field, so the flag stays as it was
         ]);
+
+        // Work out exactly what the field office changed
+        $after = [
+            'title' => $v['title'],
+            'category_id' => $v['category_id'] ?? null,
+            'priority' => $v['priority'],
+            'description' => $v['description'],
+            'received_channel' => $v['received_channel'],
+            'received_at' => $this->sqlDateTime($v['received_at']),
+            'incident_datetime' => $this->sqlDateTime($v['incident_datetime'] ?? null),
+            'target_date' => $v['target_date'] ?? null,
+            'province_id' => $v['province_id'] ?? null,
+            'municipality' => $v['municipality'] ?? null,
+            'barangay' => $v['barangay'] ?? null,
+            'specific_location' => $v['specific_location'] ?? null,
+            'is_anonymous' => $anon ? 1 : 0,
+            'complainant_name' => $anon ? null : ($v['complainant_name'] ?? null),
+            'complainant_contact' => $anon ? null : ($v['complainant_contact'] ?? null),
+            'complainant_email' => $anon ? null : ($v['complainant_email'] ?? null),
+        ];
+        $changes = ComplaintAdminNotifier::diff((array) $c, $after);
+
+        if ($changes) {
+            app(ComplaintAdminNotifier::class)->notify($id, 'edited', (int) auth()->id(), ['changes' => $changes], $request->ip());
+        }
+
         return back()->with('success', $msg);
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
-        $this->findScoped($id);
+        $c = $this->findScoped($id);   // grab the reference and title before the delete
         $msg = $this->wf->softDelete($id, (int) auth()->id());
+
+        app(ComplaintAdminNotifier::class)->notify($id, 'deleted', (int) auth()->id(), [
+            'reference_no' => $c->reference_no,
+            'title'        => $c->title,
+        ], $request->ip());
+
         return redirect('/field/complaints')->with('success', $msg);
     }
 }

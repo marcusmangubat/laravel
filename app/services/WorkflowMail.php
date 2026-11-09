@@ -21,6 +21,10 @@ use Throwable;
 
 class WorkflowMail
 {
+
+    public function __construct(private EmailSettingsService $mailer)
+    {
+    }
     public function officeName(int $officeId): string
     {
         return DB::table('offices')->where('office_id', $officeId)->value('office_name') ?? 'The assigned office';
@@ -35,8 +39,9 @@ class WorkflowMail
 
             // Extra recipients that were in the mail settings table (admin_email, alert_recipient)
             $actorEmail = strtolower(trim((string) DB::table('users')->where('user_id', $actorId)->value('email')));
-            foreach ((array) config('complaints.extra_admin_emails', []) as $extra) {
-                $extra = trim((string) $extra);
+            $settings = DB::table('email_settings')->where('id', 1)->first();
+            foreach (['admin_email', 'alert_recipient'] as $k) {
+                $extra = trim((string) ($settings->$k ?? ''));
                 if ($extra !== '' && strtolower($extra) !== $actorEmail) {
                     $rows[] = ['email' => $extra, 'full_name' => 'RDAC Administrator'];
                 }
@@ -98,12 +103,17 @@ class WorkflowMail
         }
         $m = $this->build($c, $heading, $intro, $details);
 
-        dispatch(function () use ($targets, $m) {
+               $settings = (array) DB::table('email_settings')->where('id', 1)->first();
+        $mailer = $this->mailer;
+
+        dispatch(function () use ($targets, $m, $settings, $mailer) {
             foreach ($targets as [$email, $name]) {
                 try {
-                    Mail::html($m['html'], function ($msg) use ($email, $name, $m) {
-                        $msg->to($email, $name !== '' ? $name : null)->subject($m['subject'])->text($m['alt']);
-                    });
+                    // EmailSettingsService adds the [DENR RDAC] subject prefix itself
+                    $r = $mailer->send($settings, $email, $name !== '' ? $name : 'User', $m['subject'], $m['html']);
+                    if (! ($r['ok'] ?? false)) {
+                        Log::error("Workflow email not sent to {$email}: " . ($r['message'] ?? 'unknown error'));
+                    }
                 } catch (Throwable $e) {
                     Log::error("Workflow email not sent to {$email}: " . $e->getMessage());
                 }
