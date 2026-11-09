@@ -1,7 +1,7 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Plus, Search, X } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { AlertCircle, CheckCircle2, Plus, Search, X } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import AdminLayout from "@/layouts/admin-layout";
 
 // ───────── Types ─────────
 type Complaint = {
@@ -45,36 +45,36 @@ type Options = {
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 const STATUS_CLS: Record<string, string> = {
-    recorded: 'bg-slate-100 text-slate-700',
-    for_review: 'bg-sky-100 text-sky-800',
-    for_assignment: 'bg-amber-100 text-amber-800',
-    assigned: 'bg-blue-100 text-blue-800',
-    under_investigation: 'bg-indigo-100 text-indigo-800',
-    for_info: 'bg-orange-100 text-orange-800',
-    for_rdac_review: 'bg-purple-100 text-purple-800',
-    resolved: 'bg-green-100 text-green-800',
-    closed: 'bg-emerald-100 text-emerald-900',
+    recorded: "bg-slate-100 text-slate-700",
+    for_review: "bg-sky-100 text-sky-800",
+    for_assignment: "bg-amber-100 text-amber-800",
+    assigned: "bg-blue-100 text-blue-800",
+    under_investigation: "bg-indigo-100 text-indigo-800",
+    for_info: "bg-orange-100 text-orange-800",
+    for_rdac_review: "bg-purple-100 text-purple-800",
+    resolved: "bg-green-100 text-green-800",
+    closed: "bg-emerald-100 text-emerald-900",
 };
 const PRIORITY_CLS: Record<string, string> = {
-    urgent: 'bg-red-100 text-red-800',
-    high: 'bg-orange-100 text-orange-800',
-    normal: 'bg-slate-100 text-slate-700',
-    low: 'bg-slate-50 text-slate-500',
+    urgent: "bg-red-100 text-red-800",
+    high: "bg-orange-100 text-orange-800",
+    normal: "bg-slate-100 text-slate-700",
+    low: "bg-slate-50 text-slate-500",
 };
 
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 const fmt = (s: string) =>
     s
-        ? new Date(s.replace(' ', 'T')).toLocaleString('en-PH', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
+        ? new Date(s.replace(" ", "T")).toLocaleString("en-PH", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
           })
-        : '';
+        : "";
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const pad = (n: number) => String(n).padStart(2, "0");
 const todayStr = () => {
     const d = new Date();
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -83,8 +83,8 @@ const nowLocal = () =>
     `${todayStr()}T${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
 
 const fieldCls =
-    'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500';
-const lblCls = 'mb-1 block text-xs font-semibold text-slate-500';
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
+const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
 
 function Field({
     label,
@@ -132,9 +132,9 @@ export default function Complaints({
     const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(
         undefined,
     );
-    const [filterError, setFilterError] = useState('');
+    const [filterError, setFilterError] = useState("");
     const serverFilterError =
-        page.props.errors?.from || page.props.errors?.to || '';
+        page.props.errors?.from || page.props.errors?.to || "";
 
     const go = (next: Filters, pageNo = 1) => {
         const params: Record<string, string | number> = {};
@@ -142,25 +142,25 @@ export default function Complaints({
             if (next[k]) params[k] = next[k];
         });
         if (pageNo > 1) params.page = pageNo;
-        router.get('/admin/complaints', params, {
+        router.get("/admin/complaints", params, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
-            only: ['complaints', 'filters', 'errors'],
+            only: ["complaints", "filters", "errors"],
         });
     };
 
     const setFilter = (key: keyof Filters, value: string) => {
         const next = { ...f, [key]: value };
         setF(next);
-        setFilterError('');
-        if (key === 'q') {
+        setFilterError("");
+        if (key === "q") {
             clearTimeout(debounce.current);
             debounce.current = setTimeout(() => go(next), 350); // wait until typing pauses
             return;
         }
         if (next.from && next.to && next.from > next.to) {
-            setFilterError('The start date must be on or before the end date.');
+            setFilterError("The start date must be on or before the end date.");
             return;
         }
         go(next);
@@ -168,55 +168,108 @@ export default function Complaints({
 
     const clearFilters = () => {
         const empty: Filters = {
-            q: '',
-            status_id: '',
-            category_id: '',
-            province_id: '',
-            office_id: '',
-            from: '',
-            to: '',
+            q: "",
+            status_id: "",
+            category_id: "",
+            province_id: "",
+            office_id: "",
+            from: "",
+            to: "",
         };
         setF(empty);
-        setFilterError('');
+        setFilterError("");
         go(empty);
     };
 
-    // ---- Toast from the server's flash message ----
-    const [toast, setToast] = useState('');
+    // ---- Success / error toast ----
+    const [toast, setToast] = useState<{
+        text: string;
+        type: "success" | "error";
+    } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
+
+    const showToast = (text: string, type: "success" | "error" = "success") => {
+        clearTimeout(toastTimer.current);
+        setToast({ text, type });
+        toastTimer.current = setTimeout(
+            () => setToast(null),
+            type === "error" ? 7000 : 4500,
+        );
+    };
+
+    // Server message if there is one, otherwise the default text
+    const okMsg = (res: any, fallback: string) =>
+        res?.props?.flash?.success || fallback;
+    const failMsg = (errs: Record<string, string>, fallback: string) =>
+        errs.form || errs.message || fallback;
+
+    // Show the server's flash message (e.g. "Complaint deleted." after the redirect)
     const flash: string | undefined = page.props.flash?.success;
     useEffect(() => {
-        if (!flash) return;
-        setToast(flash);
-        const t = setTimeout(() => setToast(''), 4500);
-        return () => clearTimeout(t);
+        if (flash) showToast(flash);
     }, [flash]);
+
+    // Catch server crashes, expired sessions, permission errors, network loss
+    useEffect(() => {
+        const offHttp = router.on("httpException", (event: any) => {
+            event.preventDefault();
+            const s = event.detail?.response?.status;
+            showToast(
+                s === 403
+                    ? "You do not have permission to do that."
+                    : s === 404
+                      ? "The page or record could not be found."
+                      : s === 419
+                        ? "Your session expired. Reload the page and try again."
+                        : s === 429
+                          ? "Too many requests. Please wait a moment and try again."
+                          : "Something went wrong on the server. Please try again.",
+                "error",
+            );
+        });
+        const offNetwork = router.on("networkError", (event: any) => {
+            event.preventDefault();
+            showToast(
+                "Network problem. Check your connection and try again.",
+                "error",
+            );
+        });
+        return () => {
+            offHttp();
+            offNetwork();
+            clearTimeout(toastTimer.current);
+            clearTimeout(debounce.current);
+        };
+    }, []);
 
     // ---- Record-complaint modal ----
     const [open, setOpen] = useState(false);
     const form = useForm({
-        title: '',
-        category_id: '',
-        priority: 'normal',
-        description: '',
-        received_channel: '',
-        received_at: '',
-        incident_datetime: '',
-        target_date: '',
-        province_id: '',
-        municipality: '',
-        barangay: '',
-        specific_location: '',
+        title: "",
+        category_id: "",
+        priority: "normal",
+        description: "",
+        received_channel: "",
+        received_at: "",
+        incident_datetime: "",
+        target_date: "",
+        province_id: "",
+        municipality: "",
+        barangay: "",
+        specific_location: "",
         is_anonymous: false,
-        complainant_name: '',
-        complainant_contact: '',
-        complainant_email: '',
+        complainant_name: "",
+        complainant_contact: "",
+        complainant_email: "",
     });
     const { data, setData, errors } = form;
 
     const openForm = () => {
         form.reset();
         form.clearErrors();
-        setData('received_at', nowLocal());
+        setData("received_at", nowLocal());
         setOpen(true);
     };
     const closeForm = () => setOpen(false);
@@ -224,24 +277,33 @@ export default function Complaints({
     // Lock page scroll and close on Escape while the modal is open
     useEffect(() => {
         if (!open) return;
-        document.body.classList.add('overflow-hidden');
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeForm();
-        document.addEventListener('keydown', onKey);
+        document.body.classList.add("overflow-hidden");
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeForm();
+        document.addEventListener("keydown", onKey);
         return () => {
-            document.body.classList.remove('overflow-hidden');
-            document.removeEventListener('keydown', onKey);
+            document.body.classList.remove("overflow-hidden");
+            document.removeEventListener("keydown", onKey);
         };
     }, [open]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         if (form.processing) return; // blocks duplicate submissions
-        form.post('/admin/complaints', {
+        form.post("/admin/complaints", {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (res) => {
                 closeForm();
                 form.reset();
+                showToast(okMsg(res, "Complaint recorded successfully."));
             },
+            onError: (errs) =>
+                showToast(
+                    failMsg(
+                        errs,
+                        "Could not save the complaint. Please fix the highlighted fields.",
+                    ),
+                    "error",
+                ),
             // on validation errors the modal stays open and keeps what was typed
         });
     };
@@ -252,9 +314,9 @@ export default function Complaints({
             is_anonymous: checked,
             ...(checked
                 ? {
-                      complainant_name: '',
-                      complainant_contact: '',
-                      complainant_email: '',
+                      complainant_name: "",
+                      complainant_contact: "",
+                      complainant_email: "",
                   }
                 : {}),
         }));
@@ -290,7 +352,7 @@ export default function Complaints({
                             className={`${fieldCls} pl-10`}
                             placeholder="Search reference, subject or location"
                             value={f.q}
-                            onChange={(e) => setFilter('q', e.target.value)}
+                            onChange={(e) => setFilter("q", e.target.value)}
                         />
                     </div>
                     <button
@@ -310,7 +372,7 @@ export default function Complaints({
                             className={fieldCls}
                             value={f.status_id}
                             onChange={(e) =>
-                                setFilter('status_id', e.target.value)
+                                setFilter("status_id", e.target.value)
                             }
                         >
                             <option value="">All statuses</option>
@@ -327,7 +389,7 @@ export default function Complaints({
                             className={fieldCls}
                             value={f.category_id}
                             onChange={(e) =>
-                                setFilter('category_id', e.target.value)
+                                setFilter("category_id", e.target.value)
                             }
                         >
                             <option value="">All categories</option>
@@ -347,7 +409,7 @@ export default function Complaints({
                             className={fieldCls}
                             value={f.province_id}
                             onChange={(e) =>
-                                setFilter('province_id', e.target.value)
+                                setFilter("province_id", e.target.value)
                             }
                         >
                             <option value="">All provinces</option>
@@ -367,7 +429,7 @@ export default function Complaints({
                             className={fieldCls}
                             value={f.office_id}
                             onChange={(e) =>
-                                setFilter('office_id', e.target.value)
+                                setFilter("office_id", e.target.value)
                             }
                         >
                             <option value="">All offices</option>
@@ -386,7 +448,7 @@ export default function Complaints({
                             className={fieldCls}
                             value={f.from}
                             max={f.to || TODAY}
-                            onChange={(e) => setFilter('from', e.target.value)}
+                            onChange={(e) => setFilter("from", e.target.value)}
                         />
                     </Field>
                     <Field label="Received to" htmlFor="f_to">
@@ -397,7 +459,7 @@ export default function Complaints({
                             value={f.to}
                             min={f.from || undefined}
                             max={TODAY}
-                            onChange={(e) => setFilter('to', e.target.value)}
+                            onChange={(e) => setFilter("to", e.target.value)}
                         />
                     </Field>
                 </div>
@@ -428,13 +490,13 @@ export default function Complaints({
                         <thead className="bg-slate-50">
                             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
                                 {[
-                                    'Reference',
-                                    'Subject',
-                                    'Location',
-                                    'Office',
-                                    'Status',
-                                    'Priority',
-                                    'Received',
+                                    "Reference",
+                                    "Subject",
+                                    "Location",
+                                    "Office",
+                                    "Status",
+                                    "Priority",
+                                    "Received",
                                 ].map((h) => (
                                     <th
                                         key={h}
@@ -466,21 +528,21 @@ export default function Complaints({
                                             </p>
                                             <p className="truncate text-xs text-slate-400">
                                                 {r.category_name ||
-                                                    'Uncategorized'}
+                                                    "Uncategorized"}
                                             </p>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-slate-600">
                                             {[r.municipality, r.province_name]
                                                 .filter(Boolean)
-                                                .join(', ') || 'Unknown'}
+                                                .join(", ") || "Unknown"}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-slate-600">
                                             {r.office_name ||
-                                                'Not yet assigned'}
+                                                "Not yet assigned"}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <span
-                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLS[r.status_code] ?? 'bg-slate-100 text-slate-700'}`}
+                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLS[r.status_code] ?? "bg-slate-100 text-slate-700"}`}
                                             >
                                                 {r.status_name}
                                             </span>
@@ -492,7 +554,7 @@ export default function Complaints({
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <span
-                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_CLS[r.priority] ?? ''}`}
+                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_CLS[r.priority] ?? ""}`}
                                             >
                                                 {cap(r.priority)}
                                             </span>
@@ -520,7 +582,7 @@ export default function Complaints({
                     <p>
                         {complaints.total
                             ? `Showing ${start}–${end} of ${complaints.total.toLocaleString()}`
-                            : '0 results'}
+                            : "0 results"}
                     </p>
                     <div className="flex items-center gap-2">
                         <button
@@ -532,7 +594,7 @@ export default function Complaints({
                             Previous
                         </button>
                         <span>
-                            Page {complaints.current_page} of{' '}
+                            Page {complaints.current_page} of{" "}
                             {complaints.last_page}
                         </span>
                         <button
@@ -552,10 +614,16 @@ export default function Complaints({
             {/* Toast */}
             {toast && (
                 <div
-                    role="status"
-                    className="fixed right-5 bottom-5 z-50 rounded-xl bg-[#0f3d2e] px-4 py-3 text-sm text-white shadow-lg"
+                    role={toast.type === "error" ? "alert" : "status"}
+                    aria-live={toast.type === "error" ? "assertive" : "polite"}
+                    className={`fixed right-5 bottom-5 z-[70] flex max-w-sm items-start gap-2 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${toast.type === "error" ? "bg-red-700" : "bg-[#0f3d2e]"}`}
                 >
-                    {toast}
+                    {toast.type === "error" ? (
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    ) : (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-300" />
+                    )}
+                    <span>{toast.text}</span>
                 </div>
             )}
 
@@ -597,7 +665,9 @@ export default function Complaints({
                                         role="alert"
                                         className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                                     >
-                                        Please fix the highlighted fields.
+                                        {(errors as Record<string, string>)
+                                            .form ||
+                                            "Please fix the highlighted fields."}
                                     </div>
                                 )}
 
@@ -613,16 +683,16 @@ export default function Complaints({
                                             </>
                                         }
                                         htmlFor="title"
-                                        error={err('title')}
+                                        error={err("title")}
                                     >
                                         <input
                                             id="title"
                                             className={fieldCls}
                                             maxLength={200}
-                                            aria-invalid={bad('title')}
+                                            aria-invalid={bad("title")}
                                             value={data.title}
                                             onChange={(e) =>
-                                                setData('title', e.target.value)
+                                                setData("title", e.target.value)
                                             }
                                             autoFocus
                                         />
@@ -631,7 +701,7 @@ export default function Complaints({
                                         <Field
                                             label="Category"
                                             htmlFor="category_id"
-                                            error={err('category_id')}
+                                            error={err("category_id")}
                                         >
                                             <select
                                                 id="category_id"
@@ -639,7 +709,7 @@ export default function Complaints({
                                                 value={data.category_id}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'category_id',
+                                                        "category_id",
                                                         e.target.value,
                                                     )
                                                 }
@@ -660,7 +730,7 @@ export default function Complaints({
                                         <Field
                                             label="Priority"
                                             htmlFor="priority"
-                                            error={err('priority')}
+                                            error={err("priority")}
                                         >
                                             <select
                                                 id="priority"
@@ -668,7 +738,7 @@ export default function Complaints({
                                                 value={data.priority}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'priority',
+                                                        "priority",
                                                         e.target.value,
                                                     )
                                                 }
@@ -694,17 +764,17 @@ export default function Complaints({
                                             </>
                                         }
                                         htmlFor="description"
-                                        error={err('description')}
+                                        error={err("description")}
                                     >
                                         <textarea
                                             id="description"
                                             rows={5}
                                             className={fieldCls}
-                                            aria-invalid={bad('description')}
+                                            aria-invalid={bad("description")}
                                             value={data.description}
                                             onChange={(e) =>
                                                 setData(
-                                                    'description',
+                                                    "description",
                                                     e.target.value,
                                                 )
                                             }
@@ -725,18 +795,18 @@ export default function Complaints({
                                                 </>
                                             }
                                             htmlFor="received_channel"
-                                            error={err('received_channel')}
+                                            error={err("received_channel")}
                                         >
                                             <select
                                                 id="received_channel"
                                                 className={fieldCls}
                                                 aria-invalid={bad(
-                                                    'received_channel',
+                                                    "received_channel",
                                                 )}
                                                 value={data.received_channel}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'received_channel',
+                                                        "received_channel",
                                                         e.target.value,
                                                     )
                                                 }
@@ -775,7 +845,7 @@ export default function Complaints({
                                                 </>
                                             }
                                             htmlFor="received_at"
-                                            error={err('received_at')}
+                                            error={err("received_at")}
                                         >
                                             <input
                                                 id="received_at"
@@ -783,12 +853,12 @@ export default function Complaints({
                                                 className={fieldCls}
                                                 max={nowLocal()}
                                                 aria-invalid={bad(
-                                                    'received_at',
+                                                    "received_at",
                                                 )}
                                                 value={data.received_at}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'received_at',
+                                                        "received_at",
                                                         e.target.value,
                                                     )
                                                 }
@@ -797,7 +867,7 @@ export default function Complaints({
                                         <Field
                                             label="Date and time of incident"
                                             htmlFor="incident_datetime"
-                                            error={err('incident_datetime')}
+                                            error={err("incident_datetime")}
                                             hint="Leave blank if unknown."
                                         >
                                             <input
@@ -806,12 +876,12 @@ export default function Complaints({
                                                 className={fieldCls}
                                                 max={nowLocal()}
                                                 aria-invalid={bad(
-                                                    'incident_datetime',
+                                                    "incident_datetime",
                                                 )}
                                                 value={data.incident_datetime}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'incident_datetime',
+                                                        "incident_datetime",
                                                         e.target.value,
                                                     )
                                                 }
@@ -822,7 +892,7 @@ export default function Complaints({
                                         <Field
                                             label="Target response date"
                                             htmlFor="target_date"
-                                            error={err('target_date')}
+                                            error={err("target_date")}
                                         >
                                             <input
                                                 id="target_date"
@@ -831,7 +901,7 @@ export default function Complaints({
                                                 value={data.target_date}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'target_date',
+                                                        "target_date",
                                                         e.target.value,
                                                     )
                                                 }
@@ -848,7 +918,7 @@ export default function Complaints({
                                         <Field
                                             label="Province"
                                             htmlFor="province_id"
-                                            error={err('province_id')}
+                                            error={err("province_id")}
                                         >
                                             <select
                                                 id="province_id"
@@ -856,7 +926,7 @@ export default function Complaints({
                                                 value={data.province_id}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'province_id',
+                                                        "province_id",
                                                         e.target.value,
                                                     )
                                                 }
@@ -877,7 +947,7 @@ export default function Complaints({
                                         <Field
                                             label="Municipality or city"
                                             htmlFor="municipality"
-                                            error={err('municipality')}
+                                            error={err("municipality")}
                                         >
                                             <input
                                                 id="municipality"
@@ -886,7 +956,7 @@ export default function Complaints({
                                                 value={data.municipality}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'municipality',
+                                                        "municipality",
                                                         e.target.value,
                                                     )
                                                 }
@@ -895,7 +965,7 @@ export default function Complaints({
                                         <Field
                                             label="Barangay"
                                             htmlFor="barangay"
-                                            error={err('barangay')}
+                                            error={err("barangay")}
                                         >
                                             <input
                                                 id="barangay"
@@ -904,7 +974,7 @@ export default function Complaints({
                                                 value={data.barangay}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'barangay',
+                                                        "barangay",
                                                         e.target.value,
                                                     )
                                                 }
@@ -914,7 +984,7 @@ export default function Complaints({
                                     <Field
                                         label="Specific location"
                                         htmlFor="specific_location"
-                                        error={err('specific_location')}
+                                        error={err("specific_location")}
                                     >
                                         <input
                                             id="specific_location"
@@ -924,7 +994,7 @@ export default function Complaints({
                                             value={data.specific_location}
                                             onChange={(e) =>
                                                 setData(
-                                                    'specific_location',
+                                                    "specific_location",
                                                     e.target.value,
                                                 )
                                             }
@@ -953,7 +1023,7 @@ export default function Complaints({
                                         <Field
                                             label="Name"
                                             htmlFor="complainant_name"
-                                            error={err('complainant_name')}
+                                            error={err("complainant_name")}
                                         >
                                             <input
                                                 id="complainant_name"
@@ -964,7 +1034,7 @@ export default function Complaints({
                                                 value={data.complainant_name}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'complainant_name',
+                                                        "complainant_name",
                                                         e.target.value,
                                                     )
                                                 }
@@ -973,7 +1043,7 @@ export default function Complaints({
                                         <Field
                                             label="Contact number"
                                             htmlFor="complainant_contact"
-                                            error={err('complainant_contact')}
+                                            error={err("complainant_contact")}
                                         >
                                             <input
                                                 id="complainant_contact"
@@ -984,7 +1054,7 @@ export default function Complaints({
                                                 value={data.complainant_contact}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'complainant_contact',
+                                                        "complainant_contact",
                                                         e.target.value,
                                                     )
                                                 }
@@ -993,7 +1063,7 @@ export default function Complaints({
                                         <Field
                                             label="Email"
                                             htmlFor="complainant_email"
-                                            error={err('complainant_email')}
+                                            error={err("complainant_email")}
                                         >
                                             <input
                                                 id="complainant_email"
@@ -1005,7 +1075,7 @@ export default function Complaints({
                                                 value={data.complainant_email}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'complainant_email',
+                                                        "complainant_email",
                                                         e.target.value,
                                                     )
                                                 }
@@ -1032,8 +1102,8 @@ export default function Complaints({
                                         className="rounded-xl bg-[#15803d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {form.processing
-                                            ? 'Saving...'
-                                            : 'Save complaint'}
+                                            ? "Saving..."
+                                            : "Save complaint"}
                                     </button>
                                 </div>
                             </form>

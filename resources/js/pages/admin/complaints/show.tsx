@@ -1,8 +1,8 @@
 // resources/js/pages/admin/complaints/show.tsx
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, X } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import AdminLayout from "@/layouts/admin-layout";
 
 // ───────── Types ─────────
 type Opt = { id: number; name: string; requires_reason?: boolean };
@@ -48,7 +48,7 @@ type HistoryItem = {
 };
 type AssignmentItem = {
     id: number;
-    assignment_type: 'primary' | 'secondary';
+    assignment_type: "primary" | "secondary";
     is_current: boolean;
     reason: string | null;
     target_date: string | null;
@@ -118,75 +118,75 @@ type Errs = Record<string, string | undefined>;
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
 const STATUS_CLS: Record<string, string> = {
-    recorded: 'bg-slate-100 text-slate-700',
-    for_review: 'bg-sky-100 text-sky-800',
-    for_assignment: 'bg-amber-100 text-amber-800',
-    assigned: 'bg-blue-100 text-blue-800',
-    under_investigation: 'bg-indigo-100 text-indigo-800',
-    for_info: 'bg-orange-100 text-orange-800',
-    for_rdac_review: 'bg-purple-100 text-purple-800',
-    resolved: 'bg-green-100 text-green-800',
-    closed: 'bg-emerald-100 text-emerald-900',
+    recorded: "bg-slate-100 text-slate-700",
+    for_review: "bg-sky-100 text-sky-800",
+    for_assignment: "bg-amber-100 text-amber-800",
+    assigned: "bg-blue-100 text-blue-800",
+    under_investigation: "bg-indigo-100 text-indigo-800",
+    for_info: "bg-orange-100 text-orange-800",
+    for_rdac_review: "bg-purple-100 text-purple-800",
+    resolved: "bg-green-100 text-green-800",
+    closed: "bg-emerald-100 text-emerald-900",
 };
 const PRIORITY_CLS: Record<string, string> = {
-    urgent: 'bg-red-100 text-red-800',
-    high: 'bg-orange-100 text-orange-800',
-    normal: 'bg-slate-100 text-slate-700',
-    low: 'bg-slate-50 text-slate-500',
+    urgent: "bg-red-100 text-red-800",
+    high: "bg-orange-100 text-orange-800",
+    normal: "bg-slate-100 text-slate-700",
+    low: "bg-slate-50 text-slate-500",
 };
 const CHANNEL: Record<string, string> = {
-    phone: 'Phone call',
-    email: 'Email',
-    letter: 'Letter',
-    walk_in: 'Walk-in',
-    referral: 'Referral',
-    social_media: 'Social media',
-    other: 'Other',
+    phone: "Phone call",
+    email: "Email",
+    letter: "Letter",
+    walk_in: "Walk-in",
+    referral: "Referral",
+    social_media: "Social media",
+    other: "Other",
 };
 
 const ACTION_LABELS: Record<string, string> = {
-    inspection: 'Inspection',
-    investigation_update: 'Investigation update',
-    finding: 'Finding',
-    recommendation: 'Recommendation',
-    info_request: 'Information request',
-    rdac_remark: 'RDAC remark',
-    follow_up: 'Follow-up',
-    internal_remark: 'Internal remark',
+    inspection: "Inspection",
+    investigation_update: "Investigation update",
+    finding: "Finding",
+    recommendation: "Recommendation",
+    info_request: "Information request",
+    rdac_remark: "RDAC remark",
+    follow_up: "Follow-up",
+    internal_remark: "Internal remark",
 };
 
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 const dt = (s?: string | null) =>
     s
-        ? new Date(s.replace(' ', 'T')).toLocaleString('en-PH', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
+        ? new Date(s.replace(" ", "T")).toLocaleString("en-PH", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
           })
-        : '—';
+        : "—";
 const d = (s?: string | null) =>
     s
-        ? new Date(`${s.slice(0, 10)}T00:00:00`).toLocaleDateString('en-PH', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
+        ? new Date(`${s.slice(0, 10)}T00:00:00`).toLocaleDateString("en-PH", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
           })
-        : '—';
+        : "—";
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const pad = (n: number) => String(n).padStart(2, "0");
 const nowLocal = () => {
     const n = new Date();
     return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
 };
 
 const fieldCls =
-    'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500';
-const lblCls = 'mb-1 block text-xs font-semibold text-slate-500';
-const panelCls = 'rounded-2xl border border-slate-200 bg-white p-6';
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
+const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
+const panelCls = "rounded-2xl border border-slate-200 bg-white p-6";
 const primaryBtn =
-    'w-full rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-60';
+    "w-full rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-60";
 
 const inv = (errors: Errs, k: string) => (errors[k] ? true : undefined);
 
@@ -222,7 +222,7 @@ function Info({ label, value }: { label: string; value?: string | null }) {
     return (
         <div>
             <dt className="text-xs font-semibold text-slate-500">{label}</dt>
-            <dd className="mt-0.5 text-sm break-words">{value || '—'}</dd>
+            <dd className="mt-0.5 text-sm break-words">{value || "—"}</dd>
         </div>
     );
 }
@@ -234,7 +234,7 @@ function FormBanner({ errors }: { errors: Errs }) {
             role="alert"
             className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
         >
-            {errors.form ?? 'Please fix the highlighted fields.'}
+            {errors.form ?? "Please fix the highlighted fields."}
         </p>
     );
 }
@@ -244,7 +244,7 @@ function Modal({
     titleId,
     title,
     onClose,
-    maxWidth = 'max-w-3xl',
+    maxWidth = "max-w-3xl",
     children,
 }: {
     titleId: string;
@@ -254,12 +254,12 @@ function Modal({
     children: ReactNode;
 }) {
     useEffect(() => {
-        document.body.classList.add('overflow-hidden');
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-        document.addEventListener('keydown', onKey);
+        document.body.classList.add("overflow-hidden");
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+        document.addEventListener("keydown", onKey);
         return () => {
-            document.body.classList.remove('overflow-hidden');
-            document.removeEventListener('keydown', onKey);
+            document.body.classList.remove("overflow-hidden");
+            document.removeEventListener("keydown", onKey);
         };
     }, [onClose]);
 
@@ -311,29 +311,75 @@ export default function ComplaintShow({
     edit,
     permissions: p,
 }: Props) {
-    const page = usePage<any>();
     const base = `/admin/complaints/${c.complaint_id}`;
 
-    // ---- Toast from the server's flash message ----
-    const [toast, setToast] = useState('');
-    const flash: string | undefined = page.props.flash?.success;
-    useEffect(() => {
-        if (!flash) return;
-        setToast(flash);
-        const t = setTimeout(() => setToast(''), 4500);
-        return () => clearTimeout(t);
-    }, [flash]);
+    // ---- Success / error toast ----
+    const [toast, setToast] = useState<{
+        text: string;
+        type: "success" | "error";
+    } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
 
+    const showToast = (text: string, type: "success" | "error" = "success") => {
+        clearTimeout(toastTimer.current);
+        setToast({ text, type });
+        toastTimer.current = setTimeout(
+            () => setToast(null),
+            type === "error" ? 7000 : 4500,
+        );
+    };
+
+    // Server message if there is one, otherwise the default text
+    const okMsg = (res: any, fallback: string) =>
+        res?.props?.flash?.success || fallback;
+    const failMsg = (errors: Record<string, string>, fallback: string) =>
+        errors.form || errors.message || fallback;
+
+    // Catch server crashes, expired sessions, permission errors, network loss
+    useEffect(() => {
+        const offHttp = router.on("httpException", (event: any) => {
+            event.preventDefault();
+            const s = event.detail?.response?.status;
+            showToast(
+                s === 403
+                    ? "You do not have permission to do that."
+                    : s === 404
+                      ? "This complaint could not be found. It may have been deleted."
+                      : s === 409
+                        ? "This complaint was changed by someone else. Reload the page and try again."
+                        : s === 419
+                          ? "Your session expired. Reload the page and try again."
+                          : s === 429
+                            ? "Too many requests. Please wait a moment and try again."
+                            : "Something went wrong on the server. Please try again.",
+                "error",
+            );
+        });
+        const offNetwork = router.on("networkError", (event: any) => {
+            event.preventDefault();
+            showToast(
+                "Network problem. Check your connection and try again.",
+                "error",
+            );
+        });
+        return () => {
+            offHttp();
+            offNetwork();
+            clearTimeout(toastTimer.current);
+        };
+    }, []);
     // ---- Update status ----
-    const statusForm = useForm({ to_status_id: '', reason: '' });
+    const statusForm = useForm({ to_status_id: "", reason: "" });
     const submitStatus = (e: React.FormEvent) => {
         e.preventDefault();
         if (statusForm.processing) return;
         statusForm.clearErrors();
         if (!statusForm.data.to_status_id)
-            statusForm.setError('to_status_id', 'Choose the next status.');
+            statusForm.setError("to_status_id", "Choose the next status.");
         if (!statusForm.data.reason.trim())
-            statusForm.setError('reason', 'Reason is required.');
+            statusForm.setError("reason", "Reason is required.");
         if (!statusForm.data.to_status_id || !statusForm.data.reason.trim())
             return;
         statusForm.transform((v) => ({
@@ -343,36 +389,63 @@ export default function ComplaintShow({
 
         statusForm.post(`${base}/status`, {
             preserveScroll: true,
-            onSuccess: () => statusForm.reset(),
+            onSuccess: (res) => {
+                statusForm.reset();
+                showToast(okMsg(res, "Complaint status updated."));
+            },
+            onError: (errors) =>
+                showToast(
+                    failMsg(
+                        errors,
+                        "Could not update the status. Please check the highlighted fields.",
+                    ),
+                    "error",
+                ),
         });
     };
 
     // ---- Assign office ----
     const assignForm = useForm({
-        office_id: '',
-        assignment_type: 'primary',
-        target_date: c.target_date?.slice(0, 10) ?? '',
-        reason: '',
+        office_id: "",
+        assignment_type: "primary",
+        target_date: c.target_date?.slice(0, 10) ?? "",
+        reason: "",
     });
     const submitAssign = (e: React.FormEvent) => {
         e.preventDefault();
         if (assignForm.processing) return;
         assignForm.clearErrors();
         if (!assignForm.data.office_id)
-            assignForm.setError('office_id', 'Select an office.');
+            assignForm.setError("office_id", "Select an office.");
         if (!assignForm.data.reason.trim())
-            assignForm.setError('reason', 'Reason is required.');
+            assignForm.setError("reason", "Reason is required.");
         if (!assignForm.data.office_id || !assignForm.data.reason.trim())
             return;
         assignForm.post(`${base}/assign`, {
             preserveScroll: true,
-            onSuccess: () => assignForm.reset('office_id', 'reason'),
+            onSuccess: (res) => {
+                assignForm.reset("office_id", "reason");
+                showToast(
+                    okMsg(
+                        res,
+                        "Office assigned. The concerned staff have been notified.",
+                    ),
+                );
+            },
+            onError: (errors) =>
+                showToast(
+                    failMsg(
+                        errors,
+                        "Could not save the assignment. Please check the highlighted fields.",
+                    ),
+                    "error",
+                ),
         });
     };
 
     // ---- Investigation update / additional information ----
     const updateForm = useForm<{ details: string; photos: File[] }>({
-        details: '',
+        details: "",
         photos: [],
     });
     const [fileKey, setFileKey] = useState(0); // remounts the file input to clear it
@@ -382,13 +455,13 @@ export default function ComplaintShow({
         updateForm.clearErrors();
         if (!updateForm.data.details.trim())
             updateForm.setError(
-                'details',
-                'Describe the investigation update.',
+                "details",
+                "Describe the investigation update.",
             );
         if (p.photos_required && !updateForm.data.photos.length)
             updateForm.setError(
-                'photos',
-                'Attach at least one photo of the investigation.',
+                "photos",
+                "Attach at least one photo of the investigation.",
             );
         if (
             !updateForm.data.details.trim() ||
@@ -398,13 +471,29 @@ export default function ComplaintShow({
         updateForm.post(`${base}/updates`, {
             preserveScroll: true,
             forceFormData: true,
-            onSuccess: () => {
+            onSuccess: (res) => {
                 updateForm.reset();
                 setFileKey((k) => k + 1);
+                showToast(
+                    okMsg(
+                        res,
+                        forInfo
+                            ? "Additional information submitted."
+                            : "Investigation update saved.",
+                    ),
+                );
             },
+            onError: (errors) =>
+                showToast(
+                    failMsg(
+                        errors,
+                        "Could not save the update. Check the text and photos (JPEG, PNG, WebP or GIF, up to 8 files, 5 MB each).",
+                    ),
+                    "error",
+                ),
         });
     };
-    const forInfo = c.status_code === 'for_info';
+    const forInfo = c.status_code === "for_info";
 
     // ---- Edit modal ----
     const [editOpen, setEditOpen] = useState(false);
@@ -420,7 +509,18 @@ export default function ComplaintShow({
         if (editForm.processing) return;
         editForm.put(base, {
             preserveScroll: true,
-            onSuccess: closeEdit,
+            onSuccess: (res) => {
+                closeEdit();
+                showToast(okMsg(res, "Complaint details updated."));
+            },
+            onError: (errors) =>
+                showToast(
+                    failMsg(
+                        errors,
+                        "Could not save changes. Please fix the highlighted fields.",
+                    ),
+                    "error",
+                ),
         });
     };
     const toggleAnonymous = (checked: boolean) =>
@@ -429,9 +529,9 @@ export default function ComplaintShow({
             is_anonymous: checked,
             ...(checked
                 ? {
-                      complainant_name: '',
-                      complainant_contact: '',
-                      complainant_email: '',
+                      complainant_name: "",
+                      complainant_contact: "",
+                      complainant_email: "",
                   }
                 : {}),
         }));
@@ -441,30 +541,32 @@ export default function ComplaintShow({
     // ---- Delete confirmation ----
     const [delOpen, setDelOpen] = useState(false);
     const [delBusy, setDelBusy] = useState(false);
-    const [delError, setDelError] = useState('');
+    const [delError, setDelError] = useState("");
     const confirmDelete = () => {
         router.delete(base, {
             onStart: () => {
                 setDelBusy(true);
-                setDelError('');
+                setDelError("");
             },
-            onError: (errs) =>
-                setDelError(
+            onError: (errs) => {
+                const m =
                     Object.values(errs)[0] ??
-                        'This complaint cannot be deleted.',
-                ),
+                    "This complaint cannot be deleted.";
+                setDelError(m);
+                showToast(m, "error");
+            },
             onFinish: () => setDelBusy(false),
         });
     };
 
     const location = [
         c.specific_location,
-        c.barangay ? `Brgy. ${c.barangay}` : '',
+        c.barangay ? `Brgy. ${c.barangay}` : "",
         c.municipality,
         c.province_name,
     ]
         .filter(Boolean)
-        .join(', ');
+        .join(", ");
 
     const saving =
         statusForm.processing || assignForm.processing || updateForm.processing;
@@ -499,12 +601,12 @@ export default function ComplaintShow({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <span
-                            className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_CLS[c.status_code] ?? 'bg-slate-100 text-slate-700'}`}
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_CLS[c.status_code] ?? "bg-slate-100 text-slate-700"}`}
                         >
                             {c.status_name}
                         </span>
                         <span
-                            className={`rounded-full px-3 py-1 text-sm font-medium ${PRIORITY_CLS[c.priority] ?? ''}`}
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${PRIORITY_CLS[c.priority] ?? ""}`}
                         >
                             {cap(c.priority)} priority
                         </span>
@@ -526,7 +628,7 @@ export default function ComplaintShow({
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setDelError('');
+                                    setDelError("");
                                     setDelOpen(true);
                                 }}
                                 className="rounded-xl border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50"
@@ -551,12 +653,12 @@ export default function ComplaintShow({
                         value={
                             c.incident_datetime
                                 ? dt(c.incident_datetime)
-                                : 'Unknown'
+                                : "Unknown"
                         }
                     />
                     <Info
                         label="Responsible office"
-                        value={c.office_name ?? 'Not yet assigned'}
+                        value={c.office_name ?? "Not yet assigned"}
                     />
                     <Info
                         label="Target response date"
@@ -622,7 +724,7 @@ export default function ComplaintShow({
                                                             src={ph.url}
                                                             alt={
                                                                 ph.original_name ||
-                                                                'Investigation photo'
+                                                                "Investigation photo"
                                                             }
                                                             className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
                                                         />
@@ -631,10 +733,10 @@ export default function ComplaintShow({
                                             </div>
                                         )}
                                         <p className="mt-1 text-xs text-slate-400">
-                                            {a.full_name ?? 'Unknown'}
+                                            {a.full_name ?? "Unknown"}
                                             {a.office_name
                                                 ? ` · ${a.office_name}`
-                                                : ''}{' '}
+                                                : ""}{" "}
                                             · {dt(a.action_date)}
                                         </p>
                                     </li>
@@ -656,18 +758,18 @@ export default function ComplaintShow({
                                 {assignments.map((a) => (
                                     <li
                                         key={a.id}
-                                        className={`border-l-2 pl-4 ${a.is_current ? 'border-green-500' : 'border-slate-300'}`}
+                                        className={`border-l-2 pl-4 ${a.is_current ? "border-green-500" : "border-slate-300"}`}
                                     >
                                         <p className="text-sm font-semibold">
                                             {a.from_name
                                                 ? `${a.from_name} → `
-                                                : ''}
+                                                : ""}
                                             {a.to_name}
                                             <span className="ml-2 text-xs font-medium text-slate-500">
                                                 {cap(a.assignment_type)}
                                                 {a.is_current
-                                                    ? ' · current'
-                                                    : ' · ended'}
+                                                    ? " · current"
+                                                    : " · ended"}
                                             </span>
                                         </p>
                                         {a.reason && (
@@ -676,14 +778,14 @@ export default function ComplaintShow({
                                             </p>
                                         )}
                                         <p className="mt-1 text-xs text-slate-400">
-                                            Assigned by {a.by_name ?? 'Unknown'}{' '}
+                                            Assigned by {a.by_name ?? "Unknown"}{" "}
                                             · {dt(a.created_at)}
                                             {a.target_date
                                                 ? ` · target ${d(a.target_date)}`
-                                                : ''}
+                                                : ""}
                                             {a.acknowledged_at
                                                 ? ` · acknowledged ${dt(a.acknowledged_at)}`
-                                                : ''}
+                                                : ""}
                                         </p>
                                     </li>
                                 ))}
@@ -704,7 +806,7 @@ export default function ComplaintShow({
                             Location
                         </h3>
                         <p className="text-sm break-words">
-                            {location || 'Unknown'}
+                            {location || "Unknown"}
                         </p>
                     </section>
 
@@ -742,13 +844,13 @@ export default function ComplaintShow({
                         <section className={panelCls}>
                             <h3 className="mb-2 font-semibold text-slate-700">
                                 {forInfo
-                                    ? 'Additional information'
-                                    : 'Investigation update'}
+                                    ? "Additional information"
+                                    : "Investigation update"}
                             </h3>
                             <p className="mb-3 text-xs text-slate-500">
                                 {forInfo
-                                    ? 'Submit supplementary information or supporting photos without changing the original complaint.'
-                                    : 'While this complaint is under investigation, add a written update and attach photos (JPEG, PNG, WebP or GIF, up to 8 files, 5 MB each).'}
+                                    ? "Submit supplementary information or supporting photos without changing the original complaint."
+                                    : "While this complaint is under investigation, add a written update and attach photos (JPEG, PNG, WebP or GIF, up to 8 files, 5 MB each)."}
                             </p>
                             <form
                                 onSubmit={submitUpdate}
@@ -767,12 +869,12 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             updateForm.errors,
-                                            'details',
+                                            "details",
                                         )}
                                         value={updateForm.data.details}
                                         onChange={(e) =>
                                             updateForm.setData(
-                                                'details',
+                                                "details",
                                                 e.target.value,
                                             )
                                         }
@@ -792,11 +894,11 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             updateForm.errors,
-                                            'photos',
+                                            "photos",
                                         )}
                                         onChange={(e) =>
                                             updateForm.setData(
-                                                'photos',
+                                                "photos",
                                                 Array.from(
                                                     e.target.files ?? [],
                                                 ),
@@ -811,8 +913,8 @@ export default function ComplaintShow({
                                     className={primaryBtn}
                                 >
                                     {p.photos_required
-                                        ? 'Save update with photos'
-                                        : 'Save additional information'}
+                                        ? "Save update with photos"
+                                        : "Save additional information"}
                                 </button>
                             </form>
                         </section>
@@ -844,12 +946,12 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             statusForm.errors,
-                                            'to_status_id',
+                                            "to_status_id",
                                         )}
                                         value={statusForm.data.to_status_id}
                                         onChange={(e) =>
                                             statusForm.setData(
-                                                'to_status_id',
+                                                "to_status_id",
                                                 e.target.value,
                                             )
                                         }
@@ -881,12 +983,12 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             statusForm.errors,
-                                            'reason',
+                                            "reason",
                                         )}
                                         value={statusForm.data.reason}
                                         onChange={(e) =>
                                             statusForm.setData(
-                                                'reason',
+                                                "reason",
                                                 e.target.value,
                                             )
                                         }
@@ -904,12 +1006,12 @@ export default function ComplaintShow({
                         </section>
                     ) : (
                         <p className="text-sm text-slate-400">
-                            No status change is available from here.{' '}
-                            {c.status_code === 'for_assignment'
-                                ? 'Assign an office to move this complaint to Assigned.'
-                                : c.status_code === 'closed'
-                                  ? 'This complaint is closed.'
-                                  : 'Use “Assign office” if you need to change the responsible office.'}
+                            No status change is available from here.{" "}
+                            {c.status_code === "for_assignment"
+                                ? "Assign an office to move this complaint to Assigned."
+                                : c.status_code === "closed"
+                                  ? "This complaint is closed."
+                                  : "Use “Assign office” if you need to change the responsible office."}
                         </p>
                     )}
 
@@ -939,12 +1041,12 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             assignForm.errors,
-                                            'office_id',
+                                            "office_id",
                                         )}
                                         value={assignForm.data.office_id}
                                         onChange={(e) =>
                                             assignForm.setData(
-                                                'office_id',
+                                                "office_id",
                                                 e.target.value,
                                             )
                                         }
@@ -971,7 +1073,7 @@ export default function ComplaintShow({
                                         value={assignForm.data.assignment_type}
                                         onChange={(e) =>
                                             assignForm.setData(
-                                                'assignment_type',
+                                                "assignment_type",
                                                 e.target.value,
                                             )
                                         }
@@ -996,7 +1098,7 @@ export default function ComplaintShow({
                                         value={assignForm.data.target_date}
                                         onChange={(e) =>
                                             assignForm.setData(
-                                                'target_date',
+                                                "target_date",
                                                 e.target.value,
                                             )
                                         }
@@ -1019,12 +1121,12 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             assignForm.errors,
-                                            'reason',
+                                            "reason",
                                         )}
                                         value={assignForm.data.reason}
                                         onChange={(e) =>
                                             assignForm.setData(
-                                                'reason',
+                                                "reason",
                                                 e.target.value,
                                             )
                                         }
@@ -1057,7 +1159,7 @@ export default function ComplaintShow({
                                         <p className="text-sm font-semibold">
                                             {h.from_name
                                                 ? `${h.from_name} → `
-                                                : ''}
+                                                : ""}
                                             {h.to_name}
                                         </p>
                                         {h.reason && (
@@ -1066,7 +1168,7 @@ export default function ComplaintShow({
                                             </p>
                                         )}
                                         <p className="mt-1 text-xs text-slate-400">
-                                            {h.full_name ?? 'Unknown'} ·{' '}
+                                            {h.full_name ?? "Unknown"} ·{" "}
                                             {dt(h.created_at)}
                                         </p>
                                     </li>
@@ -1091,10 +1193,10 @@ export default function ComplaintShow({
                     <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-sm shadow-2xl">
                         <p className="text-lg text-[#0f3d2e]" style={serif}>
                             {statusForm.processing
-                                ? 'Updating complaint status'
+                                ? "Updating complaint status"
                                 : assignForm.processing
-                                  ? 'Saving office assignment'
-                                  : 'Saving investigation update'}
+                                  ? "Saving office assignment"
+                                  : "Saving investigation update"}
                         </p>
                         <p className="mt-2 text-slate-600">
                             Please keep this page open. The system is saving
@@ -1108,10 +1210,16 @@ export default function ComplaintShow({
             {/* Toast */}
             {toast && (
                 <div
-                    role="status"
-                    className="fixed right-5 bottom-5 z-50 rounded-xl bg-[#0f3d2e] px-4 py-3 text-sm text-white shadow-lg"
+                    role={toast.type === "error" ? "alert" : "status"}
+                    aria-live={toast.type === "error" ? "assertive" : "polite"}
+                    className={`fixed right-5 bottom-5 z-[70] flex max-w-sm items-start gap-2 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${toast.type === "error" ? "bg-red-700" : "bg-[#0f3d2e]"}`}
                 >
-                    {toast}
+                    {toast.type === "error" ? (
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    ) : (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-300" />
+                    )}
+                    <span>{toast.text}</span>
                 </div>
             )}
 
@@ -1152,7 +1260,7 @@ export default function ComplaintShow({
                                 disabled={delBusy}
                                 className="rounded-xl bg-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-60"
                             >
-                                {delBusy ? 'Deleting...' : 'Delete complaint'}
+                                {delBusy ? "Deleting..." : "Delete complaint"}
                             </button>
                         </div>
                     </div>
@@ -1197,11 +1305,11 @@ export default function ComplaintShow({
                                     id="edit_title"
                                     className={fieldCls}
                                     maxLength={200}
-                                    aria-invalid={inv(ee, 'title')}
+                                    aria-invalid={inv(ee, "title")}
                                     value={ed.title}
                                     onChange={(e) =>
                                         editForm.setData(
-                                            'title',
+                                            "title",
                                             e.target.value,
                                         )
                                     }
@@ -1220,7 +1328,7 @@ export default function ComplaintShow({
                                         value={ed.category_id}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'category_id',
+                                                "category_id",
                                                 e.target.value,
                                             )
                                         }
@@ -1249,7 +1357,7 @@ export default function ComplaintShow({
                                         value={ed.priority}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'priority',
+                                                "priority",
                                                 e.target.value,
                                             )
                                         }
@@ -1275,11 +1383,11 @@ export default function ComplaintShow({
                                     id="edit_description"
                                     rows={5}
                                     className={fieldCls}
-                                    aria-invalid={inv(ee, 'description')}
+                                    aria-invalid={inv(ee, "description")}
                                     value={ed.description}
                                     onChange={(e) =>
                                         editForm.setData(
-                                            'description',
+                                            "description",
                                             e.target.value,
                                         )
                                     }
@@ -1307,12 +1415,12 @@ export default function ComplaintShow({
                                         className={fieldCls}
                                         aria-invalid={inv(
                                             ee,
-                                            'received_channel',
+                                            "received_channel",
                                         )}
                                         value={ed.received_channel}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'received_channel',
+                                                "received_channel",
                                                 e.target.value,
                                             )
                                         }
@@ -1342,11 +1450,11 @@ export default function ComplaintShow({
                                         type="datetime-local"
                                         className={fieldCls}
                                         max={nowLocal()}
-                                        aria-invalid={inv(ee, 'received_at')}
+                                        aria-invalid={inv(ee, "received_at")}
                                         value={ed.received_at}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'received_at',
+                                                "received_at",
                                                 e.target.value,
                                             )
                                         }
@@ -1365,12 +1473,12 @@ export default function ComplaintShow({
                                         max={nowLocal()}
                                         aria-invalid={inv(
                                             ee,
-                                            'incident_datetime',
+                                            "incident_datetime",
                                         )}
                                         value={ed.incident_datetime}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'incident_datetime',
+                                                "incident_datetime",
                                                 e.target.value,
                                             )
                                         }
@@ -1390,7 +1498,7 @@ export default function ComplaintShow({
                                         value={ed.target_date}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'target_date',
+                                                "target_date",
                                                 e.target.value,
                                             )
                                         }
@@ -1415,7 +1523,7 @@ export default function ComplaintShow({
                                         value={ed.province_id}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'province_id',
+                                                "province_id",
                                                 e.target.value,
                                             )
                                         }
@@ -1443,7 +1551,7 @@ export default function ComplaintShow({
                                         value={ed.municipality}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'municipality',
+                                                "municipality",
                                                 e.target.value,
                                             )
                                         }
@@ -1461,7 +1569,7 @@ export default function ComplaintShow({
                                         value={ed.barangay}
                                         onChange={(e) =>
                                             editForm.setData(
-                                                'barangay',
+                                                "barangay",
                                                 e.target.value,
                                             )
                                         }
@@ -1481,7 +1589,7 @@ export default function ComplaintShow({
                                     value={ed.specific_location}
                                     onChange={(e) =>
                                         editForm.setData(
-                                            'specific_location',
+                                            "specific_location",
                                             e.target.value,
                                         )
                                     }
@@ -1519,7 +1627,7 @@ export default function ComplaintShow({
                                             value={ed.complainant_name}
                                             onChange={(e) =>
                                                 editForm.setData(
-                                                    'complainant_name',
+                                                    "complainant_name",
                                                     e.target.value,
                                                 )
                                             }
@@ -1538,7 +1646,7 @@ export default function ComplaintShow({
                                             value={ed.complainant_contact}
                                             onChange={(e) =>
                                                 editForm.setData(
-                                                    'complainant_contact',
+                                                    "complainant_contact",
                                                     e.target.value,
                                                 )
                                             }
@@ -1558,7 +1666,7 @@ export default function ComplaintShow({
                                             value={ed.complainant_email}
                                             onChange={(e) =>
                                                 editForm.setData(
-                                                    'complainant_email',
+                                                    "complainant_email",
                                                     e.target.value,
                                                 )
                                             }
@@ -1582,8 +1690,8 @@ export default function ComplaintShow({
                                 className="rounded-xl bg-[#15803d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {editForm.processing
-                                    ? 'Saving...'
-                                    : 'Save changes'}
+                                    ? "Saving..."
+                                    : "Save changes"}
                             </button>
                         </div>
                     </form>
