@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\AccountCredentialsMailer;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -90,7 +91,7 @@ class UserController extends Controller
     }
 
     /** Replaces: ajax/user_create.php. Validation lives in StoreUserRequest. */
-    public function store(StoreUserRequest $request): RedirectResponse
+        public function store(StoreUserRequest $request, AccountCredentialsMailer $credentialsMailer): RedirectResponse
     {
         $v     = $request->validated();
         $admin = $request->user();
@@ -133,11 +134,17 @@ class UserController extends Controller
             throw $e;
         }
 
-        $officeName = DB::table('offices')->where('office_id', $v['office_id'])->value('office_name');
+                $officeName = DB::table('offices')->where('office_id', $v['office_id'])->value('office_name');
 
-        return back()->with('success',
-            "Account \"{$user->username}\" was created for {$officeName}. "
-            . 'Share the temporary password privately. They must change it at first sign-in.');
+        // Runs after the transaction has committed. A mail failure never undoes the account.
+        $result = $credentialsMailer->send($user, $v['password'], $officeName, $request);
+
+        return back()->with('success', $result['ok']
+            ? "Account \"{$user->username}\" was created for {$officeName}. "
+              . "The login details were emailed to {$user->email}. They must change the password at first sign-in."
+            : "Account \"{$user->username}\" was created for {$officeName}, but the email to {$user->email} "
+              . "could not be sent ({$result['message']}). Share the temporary password privately. "
+              . 'They must change it at first sign-in.');
     }
 
     /** Replaces: ajax/user_status.php. Activate or deactivate a field-office account. */
