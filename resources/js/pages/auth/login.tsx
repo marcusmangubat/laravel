@@ -224,8 +224,12 @@ export default function Login() {
                 <div className="w-full max-w-md">
                     {/* Mobile brand */}
                     <div className="mb-8 flex items-center gap-3 lg:hidden">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-700 font-bold text-white">
-                            D
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+                            <img
+                                src="/logo.jpg"
+                                alt="DENR Logo"
+                                className="h-full w-full object-contain"
+                            />
                         </div>
                         <span className="text-sm font-semibold tracking-widest text-green-800 uppercase">
                             DENR
