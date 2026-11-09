@@ -224,7 +224,7 @@ export default function Login() {
                 <div className="w-full max-w-md">
                     {/* Mobile brand */}
                     <div className="mb-8 flex items-center gap-3 lg:hidden">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
                             <img
                                 src="/logo.jpg"
                                 alt="DENR Logo"
