@@ -1,6 +1,5 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import {
-    Bell,
     ClipboardList,
     Gauge,
     FileText,
@@ -8,7 +7,8 @@ import {
     LogOut,
     Settings,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode } from "react";
+import NotificationBell from "@/Components/NotificationBell";
 
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
@@ -47,37 +47,12 @@ type Props = {
     children: ReactNode;
 };
 
-export default function FieldLayout({
-    title,
-    unread,
-    actions,
-    children,
-}: Props) {
+export default function FieldLayout({ title, actions, children }: Props) {
     const page = usePage<any>();
     const current = page.url.split("?")[0];
     const fullName: string =
         page.props.auth?.user?.full_name ?? "Field Office User";
     const officeName: string = page.props.office_name ?? "Field Office";
-    const unreadCount: number = unread ?? page.props.unread ?? 0;
-
-    const [bellOpen, setBellOpen] = useState(false);
-    const bellRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const onClick = (e: MouseEvent) => {
-            if (bellRef.current && !bellRef.current.contains(e.target as Node))
-                setBellOpen(false);
-        };
-        document.addEventListener("mousedown", onClick);
-        return () => document.removeEventListener("mousedown", onClick);
-    }, []);
-
-    const markRead = () =>
-        router.post(
-            "/field/notifications/read",
-            {},
-            { preserveScroll: true, preserveState: true },
-        );
 
     return (
         <div
@@ -174,54 +149,7 @@ export default function FieldLayout({
                         <div className="flex items-center gap-2">
                             {actions}
 
-                            <div className="relative" ref={bellRef}>
-                                <button
-                                    type="button"
-                                    aria-label="Notifications"
-                                    aria-expanded={bellOpen}
-                                    onClick={() => setBellOpen((o) => !o)}
-                                    className="relative h-10 w-10 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none"
-                                >
-                                    <Bell className="mx-auto h-4 w-4" />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-[1.25rem] rounded-full bg-red-600 px-1 text-xs leading-5 font-semibold text-white">
-                                            {unreadCount > 99
-                                                ? "99+"
-                                                : unreadCount}
-                                        </span>
-                                    )}
-                                </button>
-
-                                {bellOpen && (
-                                    <div
-                                        role="dialog"
-                                        aria-label="Notifications"
-                                        className="absolute right-0 z-50 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white shadow-xl"
-                                    >
-                                        <div className="border-b border-slate-200 px-4 py-3">
-                                            <p className="text-sm font-semibold text-slate-800">
-                                                Notifications
-                                            </p>
-                                        </div>
-                                        <div className="px-4 py-6 text-center text-sm text-slate-600">
-                                            {unreadCount > 0
-                                                ? `You have ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`
-                                                : "You are all caught up."}
-                                        </div>
-                                        {unreadCount > 0 && (
-                                            <div className="border-t border-slate-200 px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={markRead}
-                                                    className="w-full rounded-xl bg-[#15803d] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0f3d2e]"
-                                                >
-                                                    Mark all as read
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            <NotificationBell readUrl="/field/notifications/read" />
 
                             <Link
                                 href="/logout"

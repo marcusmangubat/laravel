@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Admin\ComplaintController as AdminComplaintController;
@@ -59,6 +60,9 @@ Route::middleware(['auth', 'nocache'])->group(function () {
             default        => abort(403),
         };
     })->name('dashboard');
+
+      Route::post('/notifications/{id}/open', [NotificationController::class, 'open'])
+        ->name('notifications.open');
 });
 
 /*
@@ -75,8 +79,8 @@ Route::middleware(['auth', 'nocache', 'field'])->prefix('field')->name('field.')
 
     // Dashboard & notifications
     Route::get('/dashboard', [FieldDashboardController::class, 'index'])->name('dashboard');
-    Route::post('/notifications/read', [FieldDashboardController::class, 'markNotificationsRead'])
-        ->name('notifications.read');
+    Route::post('/notifications/read', [NotificationController::class, 'readAll'])
+    ->name('notifications.read');
 
     // Complaints
     Route::get('/complaints', [FieldComplaintListController::class, 'index'])->name('complaints');
@@ -118,8 +122,8 @@ Route::middleware(['auth', 'nocache', 'admin'])->prefix('admin')->group(function
 
     // Dashboard & notifications
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::post('/notifications/read', [DashboardController::class, 'markNotificationsRead'])
-        ->name('admin.notifications.read');
+    Route::post('/notifications/read', [NotificationController::class, 'readAll'])
+    ->name('admin.notifications.read');
 
     // Complaints: list & create
     Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('complaints');
