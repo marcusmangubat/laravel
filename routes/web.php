@@ -27,7 +27,7 @@ Route::redirect('/', '/login');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('guest')->group(function () {
+Route::middleware(['nocache', 'guest'])->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
 
     Route::post('/login', [LoginController::class, 'login'])
@@ -36,7 +36,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])
-    ->middleware('auth')
+    ->middleware(['auth', 'nocache'])
     ->name('logout');
 
 // Password reset
