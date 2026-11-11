@@ -11,9 +11,11 @@ use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Field\FieldDashboardController;
 use App\Http\Controllers\Field\ComplaintController as FieldComplaintListController;
 use App\Http\Controllers\Field\FieldComplaintController;
+use App\Http\Controllers\Field\ReportController as FieldReportController;
 
 // Global route patterns
 // {id} only matches numbers (must be declared before the routes that use it)
@@ -86,6 +88,11 @@ Route::middleware(['auth', 'nocache', 'field'])->prefix('field')->name('field.')
     Route::get('/complaints', [FieldComplaintListController::class, 'index'])->name('complaints');
     Route::post('/complaints', [FieldComplaintListController::class, 'store'])->name('complaints.store');
 
+
+        // Reports
+    Route::get('/reports', [FieldReportController::class, 'index'])->name('reports');
+    Route::get('/reports/data', [FieldReportController::class, 'data'])->name('reports.data');
+    Route::get('/reports/export', [FieldReportController::class, 'export'])->name('reports.export');
     // Complaint view, edit, and workflow actions
 
         Route::controller(FieldComplaintController::class)->group(function () {
@@ -158,7 +165,12 @@ Route::middleware(['auth', 'nocache', 'admin'])->prefix('admin')->group(function
     Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
     Route::patch('/users/{id}/status', [UserController::class, 'updateStatus'])->name('admin.users.status');
 
-    // Audit trail
+        // Audit trail
     Route::get('/audit', [AuditController::class, 'index'])
         ->name('admin.audit.index');
+
+    // Reports
+    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/reports/data', [ReportController::class, 'data'])->name('admin.reports.data');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
 });
