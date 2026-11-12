@@ -634,9 +634,13 @@ export default function Complaints({
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="modalTitle"
+                    onClick={closeForm}
                 >
                     <div className="flex min-h-full items-start justify-center p-4 sm:p-8">
-                        <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
+                        <div
+                            className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
                                 <h2
                                     id="modalTitle"

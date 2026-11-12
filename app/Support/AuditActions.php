@@ -21,6 +21,7 @@ final class AuditActions
         'complaint_acknowledged' => 'Assignment acknowledged',
         'complaint_update_added' => 'Investigation update added',
         'complaint_edited' => 'Complaint edited',
+        'profile_updated' => 'Profile updated',
         'complaint_deleted' => 'Complaint deleted',
         'field_user_created' => 'Field office account created',
         'field_user_activated' => 'Field office account activated',

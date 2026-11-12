@@ -16,6 +16,7 @@ use App\Http\Controllers\Field\FieldDashboardController;
 use App\Http\Controllers\Field\ComplaintController as FieldComplaintListController;
 use App\Http\Controllers\Field\FieldComplaintController;
 use App\Http\Controllers\Field\ReportController as FieldReportController;
+use App\Http\Controllers\Field\SettingsController;
 
 // Global route patterns
 // {id} only matches numbers (must be declared before the routes that use it)
@@ -94,6 +95,12 @@ Route::middleware(['auth', 'nocache', 'field'])->prefix('field')->name('field.')
     Route::get('/reports/data', [FieldReportController::class, 'data'])->name('reports.data');
     Route::get('/reports/export', [FieldReportController::class, 'export'])->name('reports.export');
     // Complaint view, edit, and workflow actions
+
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])
+        ->middleware('throttle:5,1')
+        ->name('settings.password');
 
         Route::controller(FieldComplaintController::class)->group(function () {
             Route::get('complaints/{id}', 'show')
