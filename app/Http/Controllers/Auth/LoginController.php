@@ -82,6 +82,7 @@ class LoginController extends Controller
         // 8. Create an authenticated Laravel session
         Auth::login($user);
         $request->session()->regenerate();
+        Inertia::clearHistory();
 
         // 9. Record the successful login
         $user->forceFill([

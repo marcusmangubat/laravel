@@ -33,6 +33,7 @@ export default function Login() {
             "/login",
             { login, password },
             {
+                replace: true,
                 onStart: () => setLoading(true),
                 onFinish: () => setLoading(false),
             },
