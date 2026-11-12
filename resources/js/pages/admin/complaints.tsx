@@ -898,6 +898,10 @@ export default function Complaints({
                                                 id="target_date"
                                                 type="date"
                                                 className={fieldCls}
+                                                min={TODAY}
+                                                aria-invalid={bad(
+                                                    "target_date",
+                                                )}
                                                 value={data.target_date}
                                                 onChange={(e) =>
                                                     setData(
@@ -1047,17 +1051,25 @@ export default function Complaints({
                                         >
                                             <input
                                                 id="complainant_contact"
+                                                type="tel"
+                                                inputMode="numeric"
+                                                pattern="[0-9]{11}"
                                                 className={fieldCls}
-                                                maxLength={100}
+                                                maxLength={11}
                                                 autoComplete="off"
+                                                placeholder="09XXXXXXXXX"
                                                 disabled={data.is_anonymous}
                                                 value={data.complainant_contact}
-                                                onChange={(e) =>
+                                                onChange={(e) => {
+                                                    const value = e.target.value
+                                                        .replace(/\D/g, "")
+                                                        .slice(0, 11);
+
                                                     setData(
                                                         "complainant_contact",
-                                                        e.target.value,
-                                                    )
-                                                }
+                                                        value,
+                                                    );
+                                                }}
                                             />
                                         </Field>
                                         <Field

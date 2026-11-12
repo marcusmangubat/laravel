@@ -797,6 +797,7 @@ export default function FieldComplaints({
                                             <input
                                                 type="date"
                                                 className={fieldCls}
+                                                min={TODAY}
                                                 {...bind("target_date")}
                                             />
                                         </Field>
@@ -909,11 +910,28 @@ export default function FieldComplaints({
                                             error={err("complainant_contact")}
                                         >
                                             <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                pattern="[0-9]{11}"
                                                 className={fieldCls}
-                                                maxLength={100}
+                                                maxLength={11}
                                                 autoComplete="off"
+                                                placeholder="09XXXXXXXXX"
                                                 disabled={data.is_anonymous}
-                                                {...bind("complainant_contact")}
+                                                value={data.complainant_contact}
+                                                aria-invalid={bad(
+                                                    "complainant_contact",
+                                                )}
+                                                onChange={(e) => {
+                                                    const value = e.target.value
+                                                        .replace(/\D/g, "")
+                                                        .slice(0, 11);
+
+                                                    setData(
+                                                        "complainant_contact",
+                                                        value,
+                                                    );
+                                                }}
                                             />
                                         </Field>
                                         <Field

@@ -715,16 +715,23 @@ export default function Users({
                                     >
                                         <input
                                             id="contact_number"
+                                            type="tel"
+                                            inputMode="numeric"
+                                            pattern="[0-9]{11}"
                                             className={fieldCls}
-                                            maxLength={50}
+                                            maxLength={11}
                                             autoComplete="off"
+                                            placeholder="09XXXXXXXXX"
                                             value={data.contact_number}
-                                            onChange={(e) =>
+                                            onChange={(e) => {
+                                                const value = e.target.value
+                                                    .replace(/\D/g, "")
+                                                    .slice(0, 11);
                                                 setData(
                                                     "contact_number",
-                                                    e.target.value,
-                                                )
-                                            }
+                                                    value,
+                                                );
+                                            }}
                                         />
                                     </Field>
                                 </div>

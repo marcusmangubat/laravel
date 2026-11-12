@@ -35,12 +35,18 @@ class StoreComplaintRequest extends FormRequest
             // Incident cannot be after the received date
             'incident_datetime' => ['nullable', 'date', 'before_or_equal:received_at'],
             // Target date cannot be before the received DATE (day only, so a custom rule)
-            'target_date'       => ['nullable', 'date_format:Y-m-d', function ($attribute, $value, $fail) {
-                $received = strtotime((string) $this->input('received_at'));
-                if ($received !== false && $value < date('Y-m-d', $received)) {
-                    $fail('The target date cannot be before the received date.');
-                }
-            }],
+            'target_date' => [
+                'nullable',
+                'date_format:Y-m-d',
+                'after_or_equal:today',
+                function ($attribute, $value, $fail) {
+                    $received = strtotime((string) $this->input('received_at'));
+
+                    if ($received !== false && $value < date('Y-m-d', $received)) {
+                        $fail('The target date cannot be before the received date.');
+                    }
+                },
+            ],
 
             'municipality'      => ['nullable', 'string', 'max:100'],
             'barangay'          => ['nullable', 'string', 'max:100'],
@@ -48,7 +54,11 @@ class StoreComplaintRequest extends FormRequest
 
             'is_anonymous'        => ['boolean'],
             'complainant_name'    => ['nullable', 'string', 'max:150'],
-            'complainant_contact' => ['nullable', 'string', 'max:100'],
+            'complainant_contact' => [
+                'nullable',
+                'string',
+                'regex:/^09[0-9]{9}$/',
+            ],
             'complainant_email'   => ['nullable', 'email', 'max:150'],
         ];
     }
@@ -76,7 +86,7 @@ class StoreComplaintRequest extends FormRequest
             'barangay.max'            => 'Maximum 100 characters.',
             'specific_location.max'   => 'Maximum 255 characters.',
             'complainant_name.max'    => 'Maximum 150 characters.',
-            'complainant_contact.max' => 'Maximum 100 characters.',
+            'complainant_contact.regex' => 'Contact number must start with 09 and contain exactly 11 digits (e.g., 09876543212).',
             'complainant_email.email' => 'Enter a valid email address.',
             'complainant_email.max'   => 'Enter a valid email address.',
         ];

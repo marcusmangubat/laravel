@@ -42,7 +42,18 @@ class StoreFieldComplaintRequest extends FormRequest
             'received_channel'   => ['required', Rule::in(['phone', 'email', 'letter', 'walk_in', 'referral', 'social_media', 'other'])],
             'received_at'        => ['required', 'date_format:' . self::DT],
             'incident_datetime'  => ['nullable', 'date_format:' . self::DT],
-            'target_date'        => ['nullable', 'date_format:Y-m-d'],
+            'target_date' => [
+                'nullable',
+                'date_format:Y-m-d',
+                'after_or_equal:today',
+                function ($attribute, $value, $fail) {
+                    $received = strtotime((string) $this->input('received_at'));
+
+                    if ($received !== false && $value < date('Y-m-d', $received)) {
+                        $fail('The target date cannot be before the received date.');
+                    }
+                },
+            ],
             // Optional: an unknown location is allowed, same as the admin form and the old PHP endpoint.
             'province_id'        => ['nullable', 'integer', Rule::exists('provinces', 'province_id')->where('is_active', 1)],
             'municipality'       => ['nullable', 'string', 'max:100'],
@@ -50,7 +61,11 @@ class StoreFieldComplaintRequest extends FormRequest
             'specific_location'  => ['nullable', 'string', 'max:255'],
             'is_anonymous'       => ['nullable', 'boolean'],
             'complainant_name'   => ['nullable', 'string', 'max:150'],
-            'complainant_contact'=> ['nullable', 'string', 'max:100'],
+            'complainant_contact' => [
+                'nullable',
+                'string',
+                'regex:/^09[0-9]{9}$/',
+            ],
             'complainant_email'  => ['nullable', 'email', 'max:150'],
         ];
     }
@@ -71,6 +86,7 @@ class StoreFieldComplaintRequest extends FormRequest
             'category_id.exists'        => 'Choose a valid category.',
             'province_id.exists'        => 'Choose a valid province.',
             'complainant_email.email'   => 'Enter a valid email address.',
+            'complainant_contact.regex' => 'Contact number must start with 09 and contain exactly 11 digits (e.g., 09876543212).',
             '*.max'                     => 'Maximum :max characters.',
         ];
     }

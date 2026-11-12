@@ -29,7 +29,11 @@ class StoreUserRequest extends FormRequest
 
             'full_name'      => ['required', 'string', 'max:150'],
             'position_title' => ['nullable', 'string', 'max:120'],
-            'contact_number' => ['nullable', 'string', 'max:50'],
+            'contact_number' => [
+                'required',
+                'string',
+                'regex:/^09[0-9]{9}$/',
+            ],
 
             // unique:users,username  =  "SELECT 1 FROM users WHERE username = ?" from your old code
             'username' => [
