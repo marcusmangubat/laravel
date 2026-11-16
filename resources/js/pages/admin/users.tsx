@@ -3,7 +3,7 @@ import { AlertCircle, CheckCircle2, Plus, Search, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import AdminLayout from "@/layouts/admin-layout";
 
-// ───────── Types (match what UserController sends) ─────────
+//  Types (match what UserController sends)
 type Account = {
     user_id: number;
     username: string;
@@ -91,7 +91,7 @@ function Field({
     );
 }
 
-// ───────── Page ─────────
+//  Page
 export default function Users({
     users,
     filters,
