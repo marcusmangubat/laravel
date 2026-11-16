@@ -17,6 +17,7 @@ use App\Http\Controllers\Field\ComplaintController as FieldComplaintListControll
 use App\Http\Controllers\Field\FieldComplaintController;
 use App\Http\Controllers\Field\ReportController as FieldReportController;
 use App\Http\Controllers\Field\SettingsController;
+use App\Http\Controllers\Admin\EmailAccountController;
 
 // Global route patterns
 // {id} only matches numbers (must be declared before the routes that use it)
@@ -25,9 +26,9 @@ Route::pattern('id', '[0-9]+');
 Route::redirect('/', '/login');
 
 /*
-|--------------------------------------------------------------------------
-| Authentication
-|--------------------------------------------------------------------------
+
+ Authentication
+
 */
 
 Route::middleware(['nocache', 'guest'])->group(function () {
@@ -48,9 +49,9 @@ Route::post('/password/reset', [PasswordResetController::class, 'handle'])
     ->name('password.reset.handle');
 
 /*
-|--------------------------------------------------------------------------
-| Authenticated routes
-|--------------------------------------------------------------------------
+
+ Authenticated routes
+
 */
 
 Route::middleware(['auth', 'nocache'])->group(function () {
@@ -69,13 +70,13 @@ Route::middleware(['auth', 'nocache'])->group(function () {
 });
 
 /*
-|--------------------------------------------------------------------------
-| Field office routes (/field/*)
-|--------------------------------------------------------------------------
-| The active user / active office checks that used to be in the closure
-| must now live in the 'field' middleware (or the controller).
-| If 'field.office' is a separate middleware, use:
-| ['auth', 'field', 'field.office']
+
+ Field office routes (/field/*)
+
+ The active user / active office checks that used to be in the closure
+ must now live in the 'field' middleware (or the controller).
+ If 'field.office' is a separate middleware, use:
+ ['auth', 'field', 'field.office']
 */
 
 Route::middleware(['auth', 'nocache', 'field'])->prefix('field')->name('field.')->group(function () {
@@ -127,9 +128,9 @@ Route::middleware(['auth', 'nocache', 'field'])->prefix('field')->name('field.')
 });
 
 /*
-|--------------------------------------------------------------------------
-| Admin routes (/admin/*)
-|--------------------------------------------------------------------------
+
+ Admin routes (/admin/*)
+
 */
 
 Route::middleware(['auth', 'nocache', 'admin'])->prefix('admin')->group(function () {
@@ -166,6 +167,17 @@ Route::middleware(['auth', 'nocache', 'admin'])->prefix('admin')->group(function
         ->name('admin.email-settings.update');
     Route::post('/email-settings/test', [EmailSettingsController::class, 'sendTestEmail'])
         ->name('admin.email-settings.test');
+
+
+    // Gmail account management
+    Route::post('/email-accounts', [EmailAccountController::class, 'store']);
+    Route::post('/email-accounts/{account}/toggle', [EmailAccountController::class, 'toggle']);
+    Route::post('/email-accounts/{account}/move', [EmailAccountController::class, 'move']);
+    Route::post('/email-accounts/{account}/reset', [EmailAccountController::class, 'reset']);
+    Route::delete('/email-accounts/{account}', [EmailAccountController::class, 'destroy']);
+    Route::put('/email-accounts/{account}', [EmailAccountController::class, 'update']);
+    Route::post('/email-accounts/{account}/test', [EmailAccountController::class, 'test']);
+
 
     // Users
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');

@@ -8,6 +8,7 @@ use App\Services\EmailSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Models\EmailAccount;
 use Inertia\Inertia;
 
 class EmailSettingsController extends Controller
@@ -67,6 +68,21 @@ class EmailSettingsController extends Controller
 
         return Inertia::render('admin/email-settings', [
             'settings' => array_merge($this->defaults(), $settings),
+            'accounts' => EmailAccount::orderBy('priority')->get()->map(fn ($a) => [
+                'account_id'      => $a->account_id,
+                'label'           => $a->label,
+                'email'           => $a->email,
+                'daily_limit'     => $a->daily_limit,
+                'sent_today'      => $a->sentTodayCount(),
+                'total_sent'      => $a->total_sent,
+                'priority'        => $a->priority,
+                'is_active'       => $a->is_active,
+                'exhausted_until' => $a->exhausted_until?->toDateTimeString(),
+                'last_error'      => $a->last_error,
+                'last_used_at'    => $a->last_used_at?->toDateTimeString(),
+                'status'          => ! $a->is_active ? 'disabled'
+                    : (($a->exhausted_until && $a->exhausted_until->isFuture()) ? 'limit_reached' : 'ready'),
+            ])->values(),
         ]);
     }
 
