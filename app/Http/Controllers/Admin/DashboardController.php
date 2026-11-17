@@ -14,7 +14,6 @@ use Inertia\Response;
 class DashboardController extends Controller
 {
     /**
-     * Replaces: admin/dashboard.php (page) + admin/ajax/dashboard_data.php (GET).
      * Session check, admin role, timeout and CSRF are handled by middleware,
      * so none of that code lives here anymore.
      */

@@ -14,7 +14,6 @@ class StoreComplaintRequest extends FormRequest
     }
 
     /**
-     * Same rules as ajax/complaint_create.php.
      * Laravel trims text and converts empty strings to null before these run.
      */
     public function rules(): array

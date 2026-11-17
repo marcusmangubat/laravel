@@ -7,9 +7,6 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * Replaces the access-control block at the top of field/dashboard.php
- * and the "re-check account and office in the database" part of field/ajax/dashboard_data.php.
- *
  * Laravel loads the user from the database on every request, so is_active and the
  * office are always fresh. Nothing about the office ever comes from the browser.
  */

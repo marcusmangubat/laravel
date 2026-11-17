@@ -25,7 +25,6 @@ class OfficeController extends Controller
     ];
 
     /**
-     * Replaces: offices.php (page) + ajax/offices_list.php.
      * Admin-only access is handled by the 'admin' route middleware.
      */
     public function index(Request $request): Response|RedirectResponse

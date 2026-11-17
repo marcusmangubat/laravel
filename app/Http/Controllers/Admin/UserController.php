@@ -22,7 +22,6 @@ class UserController extends Controller
     private const PER_PAGE = 10;
 
     /**
-     * Replaces: users.php (page) + ajax/users_list.php.
      * Lists field-office accounts only (admin accounts are never shown here).
      */
     public function index(Request $request): Response|RedirectResponse
@@ -90,7 +89,6 @@ class UserController extends Controller
         ]);
     }
 
-    /** Replaces: ajax/user_create.php. Validation lives in StoreUserRequest. */
         public function store(StoreUserRequest $request, AccountCredentialsMailer $credentialsMailer): RedirectResponse
     {
         $v     = $request->validated();
@@ -147,7 +145,6 @@ class UserController extends Controller
               . 'They must change it at first sign-in.');
     }
 
-    /** Replaces: ajax/user_status.php. Activate or deactivate a field-office account. */
     public function updateStatus(Request $request, int $id): RedirectResponse
     {
         $v = $request->validate(['is_active' => ['required', 'in:0,1']]);

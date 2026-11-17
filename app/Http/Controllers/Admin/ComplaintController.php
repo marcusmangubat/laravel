@@ -18,7 +18,6 @@ class ComplaintController extends Controller
     private const PER_PAGE = 10;
 
     /**
-     * Replaces: complaints.php (page) + ajax/complaints_list.php.
      * Filters come in as ?q=...&status_id=...&page=2 and go straight into the query.
      */
     public function index(Request $request): Response|RedirectResponse
@@ -104,7 +103,6 @@ class ComplaintController extends Controller
     }
 
     /**
-     * Replaces: ajax/complaint_create.php.
      * Validation lives in StoreComplaintRequest; CSRF and login checks are middleware.
      */
     public function store(StoreComplaintRequest $request): RedirectResponse

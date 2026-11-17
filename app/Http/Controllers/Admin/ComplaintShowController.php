@@ -1,7 +1,6 @@
 <?php
 
 // app/Http/Controllers/Admin/ComplaintShowController.php
-// Replaces admin/complaint-view.php and ajax/complaint_{status,assign,update,edit,delete}.php.
 // Feeds resources/js/pages/admin/complaints/show.tsx.
 
 namespace App\Http\Controllers\Admin;

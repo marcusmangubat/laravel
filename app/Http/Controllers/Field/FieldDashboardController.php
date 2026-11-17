@@ -13,7 +13,6 @@ use Inertia\Response;
 class FieldDashboardController extends Controller
 {
     /**
-     * Replaces: field/dashboard.php (page) + field/ajax/dashboard_data.php (GET).
      * The 'field' middleware already checked role, active account and active office.
      */
     public function index(Request $request): Response

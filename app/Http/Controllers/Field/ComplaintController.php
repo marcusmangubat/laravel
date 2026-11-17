@@ -14,7 +14,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Field office complaints (was field/complaints.php + ajax/complaints_list.php + ajax/complaint_create.php).
  * Same pattern as the admin page: Inertia props in, flash message out.
  * Every query is scoped to the logged-in user's own office; nothing about the office comes from the browser.
  */
