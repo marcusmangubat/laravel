@@ -38,8 +38,9 @@ type Props = {
     flash?: { success?: string };
 };
 
+// text-base on mobile stops iOS Safari from zooming into focused inputs
 const fieldClass =
-    "mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
+    "mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base sm:text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
 const labelClass = "block text-sm font-medium text-slate-700";
 const errorClass = "mt-1 text-xs text-red-600";
 
@@ -124,9 +125,10 @@ export default function EmailSettingsPage({ settings, accounts }: Props) {
     return (
         <AdminLayout title="Email Settings">
             <Head title="Email Settings" />
-            <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
+            {/* Full width (no max-w / mx-auto) so the page fills the layout */}
+            <main className="w-full min-w-0 space-y-4 sm:space-y-6">
                 <header>
-                    <h1 className="text-2xl font-bold text-slate-900">
+                    <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
                         Email Settings
                     </h1>
                     <p className="mt-1 text-sm text-slate-500">
@@ -143,281 +145,321 @@ export default function EmailSettingsPage({ settings, accounts }: Props) {
                     </div>
                 )}
 
-                <form
-                    onSubmit={submit}
-                    className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-                    autoComplete="off"
-                >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
+                {/* Two columns on wide screens: settings form | Gmail queue */}
+                <div className="grid items-start gap-4 sm:gap-6 xl:grid-cols-2">
+                    <form
+                        onSubmit={submit}
+                        className="min-w-0 space-y-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+                        autoComplete="off"
+                    >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h2 className="font-bold text-slate-800">
+                                    Sender &amp; general settings
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    These values are stored in email_settings
+                                    (row id 1).
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setTestMessage("");
+                                    setTestOk(null);
+                                    setTestOpen(true);
+                                }}
+                                className="shrink-0 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:py-2"
+                            >
+                                Test email connection
+                            </button>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field
+                                label="From name"
+                                error={form.errors.from_name}
+                            >
+                                <input
+                                    className={fieldClass}
+                                    maxLength={150}
+                                    value={form.data.from_name}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "from_name",
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="From email address"
+                                error={form.errors.from_email}
+                            >
+                                <input
+                                    type="email"
+                                    required
+                                    className={fieldClass}
+                                    maxLength={150}
+                                    value={form.data.from_email}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "from_email",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="name@gmail.com"
+                                />
+                            </Field>
+                            <Field
+                                label="Admin contact email"
+                                error={form.errors.admin_email}
+                            >
+                                <input
+                                    type="email"
+                                    className={fieldClass}
+                                    maxLength={150}
+                                    value={form.data.admin_email}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "admin_email",
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Alert recipient email"
+                                error={form.errors.alert_recipient}
+                            >
+                                <input
+                                    type="email"
+                                    className={fieldClass}
+                                    maxLength={150}
+                                    value={form.data.alert_recipient}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "alert_recipient",
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Subject prefix"
+                                error={form.errors.subject_prefix}
+                            >
+                                <input
+                                    className={fieldClass}
+                                    maxLength={100}
+                                    value={form.data.subject_prefix}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "subject_prefix",
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Cooldown period (hours)"
+                                error={form.errors.cooldown_hours}
+                            >
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={168}
+                                    required
+                                    className={fieldClass}
+                                    value={form.data.cooldown_hours}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "cooldown_hours",
+                                            Number(e.target.value),
+                                        )
+                                    }
+                                />
+                            </Field>
+                        </div>
+
+                        <hr className="border-slate-200" />
                         <div>
                             <h2 className="font-bold text-slate-800">
-                                Sender &amp; general settings
+                                SMTP transport
                             </h2>
                             <p className="mt-1 text-sm text-slate-500">
-                                These values are stored in email_settings (row
-                                id 1).
+                                Gmail: smtp.gmail.com, SSL/465 or TLS/587, full
+                                Gmail username and an App Password.
                             </p>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setTestMessage("");
-                                setTestOk(null);
-                                setTestOpen(true);
-                            }}
-                            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                        >
-                            Test email connection
-                        </button>
-                    </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="From name" error={form.errors.from_name}>
-                            <input
-                                className={fieldClass}
-                                maxLength={150}
-                                value={form.data.from_name}
-                                onChange={(e) =>
-                                    form.setData("from_name", e.target.value)
-                                }
-                            />
-                        </Field>
-                        <Field
-                            label="From email address"
-                            error={form.errors.from_email}
-                        >
-                            <input
-                                type="email"
-                                required
-                                className={fieldClass}
-                                maxLength={150}
-                                value={form.data.from_email}
-                                onChange={(e) =>
-                                    form.setData("from_email", e.target.value)
-                                }
-                                placeholder="name@gmail.com"
-                            />
-                        </Field>
-                        <Field
-                            label="Admin contact email"
-                            error={form.errors.admin_email}
-                        >
-                            <input
-                                type="email"
-                                className={fieldClass}
-                                maxLength={150}
-                                value={form.data.admin_email}
-                                onChange={(e) =>
-                                    form.setData("admin_email", e.target.value)
-                                }
-                            />
-                        </Field>
-                        <Field
-                            label="Alert recipient email"
-                            error={form.errors.alert_recipient}
-                        >
-                            <input
-                                type="email"
-                                className={fieldClass}
-                                maxLength={150}
-                                value={form.data.alert_recipient}
-                                onChange={(e) =>
-                                    form.setData(
-                                        "alert_recipient",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </Field>
-                        <Field
-                            label="Subject prefix"
-                            error={form.errors.subject_prefix}
-                        >
-                            <input
-                                className={fieldClass}
-                                maxLength={100}
-                                value={form.data.subject_prefix}
-                                onChange={(e) =>
-                                    form.setData(
-                                        "subject_prefix",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </Field>
-                        <Field
-                            label="Cooldown period (hours)"
-                            error={form.errors.cooldown_hours}
-                        >
-                            <input
-                                type="number"
-                                min={1}
-                                max={168}
-                                required
-                                className={fieldClass}
-                                value={form.data.cooldown_hours}
-                                onChange={(e) =>
-                                    form.setData(
-                                        "cooldown_hours",
-                                        Number(e.target.value),
-                                    )
-                                }
-                            />
-                        </Field>
-                    </div>
-
-                    <hr className="border-slate-200" />
-                    <div>
-                        <h2 className="font-bold text-slate-800">
-                            SMTP transport
-                        </h2>
-                        <p className="mt-1 text-sm text-slate-500">
-                            Gmail: smtp.gmail.com, SSL/465 or TLS/587, full
-                            Gmail username and an App Password.
-                        </p>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Mail driver" error={form.errors.driver}>
-                            <select
-                                className={fieldClass}
-                                value={form.data.driver}
-                                onChange={(e) =>
-                                    form.setData(
-                                        "driver",
-                                        e.target.value as "smtp" | "mail",
-                                    )
-                                }
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field
+                                label="Mail driver"
+                                error={form.errors.driver}
                             >
-                                <option value="smtp">SMTP server</option>
-                                <option value="mail">PHP native mail</option>
-                            </select>
-                        </Field>
-                        <Field label="SMTP host" error={form.errors.smtp_host}>
-                            <input
-                                className={fieldClass}
-                                maxLength={255}
-                                value={form.data.smtp_host}
-                                onChange={(e) =>
-                                    form.setData("smtp_host", e.target.value)
-                                }
-                                placeholder="smtp.gmail.com"
-                            />
-                        </Field>
-                        <Field label="SMTP port" error={form.errors.smtp_port}>
-                            <input
-                                type="number"
-                                min={1}
-                                max={65535}
-                                required
-                                className={fieldClass}
-                                value={form.data.smtp_port}
-                                onChange={(e) =>
-                                    form.setData(
-                                        "smtp_port",
-                                        Number(e.target.value),
-                                    )
-                                }
-                            />
-                        </Field>
-                        <Field
-                            label="Encryption"
-                            error={form.errors.smtp_encryption}
-                        >
-                            <select
-                                className={fieldClass}
-                                value={form.data.smtp_encryption}
-                                onChange={(e) =>
-                                    updateEncryption(
-                                        e.target.value as
-                                            | "ssl"
-                                            | "tls"
-                                            | "none",
-                                    )
-                                }
+                                <select
+                                    className={fieldClass}
+                                    value={form.data.driver}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "driver",
+                                            e.target.value as "smtp" | "mail",
+                                        )
+                                    }
+                                >
+                                    <option value="smtp">SMTP server</option>
+                                    <option value="mail">
+                                        PHP native mail
+                                    </option>
+                                </select>
+                            </Field>
+                            <Field
+                                label="SMTP host"
+                                error={form.errors.smtp_host}
                             >
-                                <option value="ssl">SSL (port 465)</option>
-                                <option value="tls">
-                                    TLS / STARTTLS (port 587)
-                                </option>
-                                <option value="none">None</option>
-                            </select>
-                        </Field>
-                        <Field
-                            label="SMTP username"
-                            error={form.errors.smtp_user}
-                        >
-                            <input
-                                className={fieldClass}
-                                maxLength={150}
-                                autoComplete="off"
-                                value={form.data.smtp_user}
-                                onChange={(e) =>
-                                    form.setData("smtp_user", e.target.value)
-                                }
-                                placeholder="name@gmail.com"
-                            />
-                        </Field>
-                        <Field
-                            label="SMTP password"
-                            error={form.errors.smtp_pass}
-                        >
-                            <input
-                                type="password"
-                                className={fieldClass}
-                                autoComplete="new-password"
-                                value={form.data.smtp_pass}
-                                onChange={(e) =>
-                                    form.setData("smtp_pass", e.target.value)
-                                }
-                                placeholder={
-                                    settings.has_smtp_password
-                                        ? "Leave blank to keep current password"
-                                        : "Enter SMTP password"
-                                }
-                            />
-                        </Field>
-                    </div>
+                                <input
+                                    className={fieldClass}
+                                    maxLength={255}
+                                    value={form.data.smtp_host}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "smtp_host",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="smtp.gmail.com"
+                                />
+                            </Field>
+                            <Field
+                                label="SMTP port"
+                                error={form.errors.smtp_port}
+                            >
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={65535}
+                                    required
+                                    className={fieldClass}
+                                    value={form.data.smtp_port}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "smtp_port",
+                                            Number(e.target.value),
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Encryption"
+                                error={form.errors.smtp_encryption}
+                            >
+                                <select
+                                    className={fieldClass}
+                                    value={form.data.smtp_encryption}
+                                    onChange={(e) =>
+                                        updateEncryption(
+                                            e.target.value as
+                                                | "ssl"
+                                                | "tls"
+                                                | "none",
+                                        )
+                                    }
+                                >
+                                    <option value="ssl">SSL (port 465)</option>
+                                    <option value="tls">
+                                        TLS / STARTTLS (port 587)
+                                    </option>
+                                    <option value="none">None</option>
+                                </select>
+                            </Field>
+                            <Field
+                                label="SMTP username"
+                                error={form.errors.smtp_user}
+                            >
+                                <input
+                                    className={fieldClass}
+                                    maxLength={150}
+                                    autoComplete="off"
+                                    value={form.data.smtp_user}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "smtp_user",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="name@gmail.com"
+                                />
+                            </Field>
+                            <Field
+                                label="SMTP password"
+                                error={form.errors.smtp_pass}
+                            >
+                                <input
+                                    type="password"
+                                    className={fieldClass}
+                                    autoComplete="new-password"
+                                    value={form.data.smtp_pass}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "smtp_pass",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder={
+                                        settings.has_smtp_password
+                                            ? "Leave blank to keep current"
+                                            : "Enter SMTP password"
+                                    }
+                                />
+                            </Field>
+                        </div>
 
-                    {form.errors && Object.keys(form.errors).length > 0 && (
-                        <p
-                            role="alert"
-                            className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-                        >
-                            Please correct the highlighted fields.
-                        </p>
-                    )}
+                        {form.errors && Object.keys(form.errors).length > 0 && (
+                            <p
+                                role="alert"
+                                className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                            >
+                                Please correct the highlighted fields.
+                            </p>
+                        )}
 
-                    <div className="flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                        >
-                            {form.processing ? "Saving…" : "Save configuration"}
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex sm:justify-end">
+                            <button
+                                type="submit"
+                                disabled={form.processing}
+                                className="w-full rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 sm:w-auto"
+                            >
+                                {form.processing
+                                    ? "Saving…"
+                                    : "Save configuration"}
+                            </button>
+                        </div>
+                    </form>
 
-                <GmailQueue
-                    accounts={accounts ?? []}
-                    defaultEmail={settings.admin_email || settings.from_email}
-                />
+                    <GmailQueue
+                        accounts={accounts ?? []}
+                        defaultEmail={
+                            settings.admin_email || settings.from_email
+                        }
+                    />
+                </div>
             </main>
 
             {testOpen && (
                 <div
-                    className="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4"
+                    className="fixed inset-0 z-50 grid place-items-end bg-slate-900/50 sm:place-items-center sm:p-4"
                     role="presentation"
                     onMouseDown={(e) => {
                         if (e.target === e.currentTarget) setTestOpen(false);
                     }}
                 >
+                    {/* Bottom sheet on phones, centered dialog from sm up */}
                     <section
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="test-title"
-                        className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl"
+                        className="w-full max-w-md space-y-4 rounded-t-2xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-6"
                     >
                         <div className="flex items-center justify-between">
                             <h2
@@ -430,7 +472,7 @@ export default function EmailSettingsPage({ settings, accounts }: Props) {
                                 type="button"
                                 onClick={() => setTestOpen(false)}
                                 aria-label="Close"
-                                className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100"
+                                className="h-10 w-10 rounded-lg text-slate-500 hover:bg-slate-100 sm:h-9 sm:w-9"
                             >
                                 ✕
                             </button>
@@ -460,18 +502,18 @@ export default function EmailSettingsPage({ settings, accounts }: Props) {
                                     {testMessage}
                                 </p>
                             )}
-                            <div className="flex justify-end gap-2">
+                            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                                 <button
                                     type="button"
                                     onClick={() => setTestOpen(false)}
-                                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600"
+                                    className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 sm:py-2"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={sendingTest}
-                                    className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                                    className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 sm:py-2"
                                 >
                                     {sendingTest ? "Sending…" : "Send test"}
                                 </button>
@@ -494,7 +536,7 @@ function Field({
     children: React.ReactNode;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label className={labelClass}>
                 {label}
                 {children}
@@ -577,10 +619,10 @@ function GmailQueue({
         disabled: "Disabled",
     } as const;
     const btn =
-        "rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50 disabled:opacity-40";
+        "rounded-lg border border-slate-300 px-3 py-2 text-center text-slate-700 hover:bg-slate-50 disabled:opacity-40 sm:py-1.5";
 
     return (
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="min-w-0 space-y-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div>
                 <h2 className="font-bold text-slate-800">
                     Gmail sending queue (automatic failover)
@@ -593,7 +635,7 @@ function GmailQueue({
                 </p>
             </div>
 
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
                 <label className={labelClass}>
                     Test recipient email
                     <input
@@ -604,14 +646,14 @@ function GmailQueue({
                         placeholder="your-email@example.com"
                     />
                 </label>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <button
                         type="button"
                         disabled={testing !== null || !testTo}
                         onClick={() =>
                             runTest("/admin/email-settings/test", "queue")
                         }
-                        className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                        className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 sm:py-2"
                     >
                         {testing === "queue"
                             ? "Sending…"
@@ -625,7 +667,7 @@ function GmailQueue({
                 {result && (
                     <p
                         role="status"
-                        className={`rounded-xl border p-3 text-sm ${result.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700"}`}
+                        className={`rounded-xl border p-3 text-sm break-words ${result.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700"}`}
                     >
                         {result.message}
                     </p>
@@ -641,14 +683,14 @@ function GmailQueue({
                 {accounts.map((a, i) => (
                     <li
                         key={a.account_id}
-                        className="rounded-xl border border-slate-200 p-4"
+                        className="rounded-xl border border-slate-200 p-3 sm:p-4"
                     >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-800">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold break-all text-slate-800">
                                     #{i + 1} · {a.email}
                                     {a.label && (
-                                        <span className="ml-2 font-normal text-slate-500">
+                                        <span className="ml-2 font-normal break-normal text-slate-500">
                                             ({a.label})
                                         </span>
                                     )}
@@ -662,19 +704,19 @@ function GmailQueue({
                                 </p>
                             </div>
                             <span
-                                className={`rounded-full px-3 py-1 text-xs font-semibold ${badge[a.status]}`}
+                                className={`self-start rounded-full px-3 py-1 text-xs font-semibold sm:shrink-0 ${badge[a.status]}`}
                             >
                                 {badgeText[a.status]}
                             </span>
                         </div>
 
                         {a.last_error && (
-                            <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">
+                            <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs break-words text-red-700">
                                 Last error: {a.last_error}
                             </p>
                         )}
 
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold min-[480px]:flex min-[480px]:flex-wrap">
                             <button
                                 type="button"
                                 disabled={i === 0}
@@ -768,7 +810,7 @@ function GmailQueue({
                             </button>
                             <button
                                 type="button"
-                                className="rounded-lg border border-red-200 px-3 py-1.5 text-red-700 hover:bg-red-50"
+                                className="rounded-lg border border-red-200 px-3 py-2 text-center text-red-700 hover:bg-red-50 sm:py-1.5"
                                 onClick={() => {
                                     if (
                                         confirm(
@@ -793,7 +835,7 @@ function GmailQueue({
 
             <form
                 autoComplete="off"
-                className="grid gap-4 md:grid-cols-2"
+                className="grid gap-4 sm:grid-cols-2"
                 onSubmit={(e) => {
                     e.preventDefault();
                     form.post("/admin/email-accounts", {
@@ -846,11 +888,11 @@ function GmailQueue({
                         }
                     />
                 </Field>
-                <div className="flex justify-end md:col-span-2">
+                <div className="flex sm:col-span-2 sm:justify-end">
                     <button
                         type="submit"
                         disabled={form.processing}
-                        className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                        className="w-full rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 sm:w-auto"
                     >
                         {form.processing ? "Adding…" : "Add Gmail account"}
                     </button>

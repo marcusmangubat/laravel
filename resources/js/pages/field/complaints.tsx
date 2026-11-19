@@ -1,5 +1,15 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { AlertCircle, CheckCircle2, Plus, Search, X } from "lucide-react";
+import {
+    AlertCircle,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    MapPin,
+    Plus,
+    Search,
+    SlidersHorizontal,
+    X,
+} from "lucide-react";
 import {
     type ChangeEvent,
     type FormEvent,
@@ -64,6 +74,13 @@ const PRIORITY_CLS: Record<string, string> = {
     normal: "bg-slate-100 text-slate-700",
     low: "bg-slate-50 text-slate-500",
 };
+// Colored edge on mobile cards so priority is visible at a glance
+const PRIORITY_EDGE: Record<string, string> = {
+    urgent: "border-l-red-500",
+    high: "border-l-orange-400",
+    normal: "border-l-slate-300",
+    low: "border-l-slate-200",
+};
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 const fmt = (s: string) =>
@@ -85,8 +102,9 @@ const todayStr = () => {
 const nowLocal = () =>
     `${todayStr()}T${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
 
+// text-base on mobile stops iOS Safari from zooming into focused inputs
 const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
 const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
 
 function Field({
@@ -103,7 +121,7 @@ function Field({
     children: ReactNode;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label htmlFor={htmlFor} className={lblCls}>
                 {label}
             </label>
@@ -158,8 +176,12 @@ export default function FieldComplaints({
         undefined,
     );
     const [filterError, setFilterError] = useState("");
+    const [showFilters, setShowFilters] = useState(false); // mobile only
     const serverFilterError =
         page.props.errors?.from || page.props.errors?.to || "";
+
+    // Number of active filters (excluding search) for the mobile badge
+    const activeFilters = [f.status_id, f.from, f.to].filter(Boolean).length;
 
     const go = (next: Filters, pageNo = 1) => {
         const params: Record<string, string | number> = {};
@@ -358,9 +380,9 @@ export default function FieldComplaints({
             <Head title="DENR RDAC IV-A – My Complaints" />
 
             {/* Toolbar */}
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="relative max-w-md min-w-[16rem] flex-1">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="relative order-1 min-w-0 flex-1 basis-full sm:basis-64 md:max-w-md">
                         <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <label htmlFor="q" className="sr-only">
                             Search complaints
@@ -374,17 +396,38 @@ export default function FieldComplaints({
                             onChange={(e) => setFilter("q", e.target.value)}
                         />
                     </div>
+
+                    {/* Filter toggle (mobile only) */}
+                    <button
+                        type="button"
+                        onClick={() => setShowFilters((v) => !v)}
+                        aria-expanded={showFilters}
+                        aria-controls="filterPanel"
+                        className="order-2 inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none md:hidden"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Filters
+                        {activeFilters > 0 && (
+                            <span className="rounded-full bg-[#15803d] px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">
+                                {activeFilters}
+                            </span>
+                        )}
+                    </button>
+
                     <button
                         type="button"
                         onClick={openForm}
-                        className="rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none"
+                        className="order-3 inline-flex flex-1 items-center justify-center rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none sm:flex-none md:ml-auto"
                     >
-                        <Plus className="mr-2 inline h-4 w-4" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Record complaint
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div
+                    id="filterPanel"
+                    className={`${showFilters ? "grid" : "hidden"} grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid md:grid-cols-3`}
+                >
                     <Field label="Status" htmlFor="f_status">
                         <select
                             id="f_status"
@@ -428,7 +471,7 @@ export default function FieldComplaints({
                 <button
                     type="button"
                     onClick={clearFilters}
-                    className="text-sm text-slate-500 underline hover:text-slate-800"
+                    className="py-1 text-sm text-slate-500 underline hover:text-slate-800"
                 >
                     Clear filters
                 </button>
@@ -438,15 +481,16 @@ export default function FieldComplaints({
             {(filterError || serverFilterError) && (
                 <div
                     role="alert"
-                    className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700"
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:px-5"
                 >
                     {filterError || serverFilterError}
                 </div>
             )}
 
-            {/* Table */}
+            {/* Results */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <div className="overflow-x-auto">
+                {/* Desktop / tablet: table */}
+                <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50">
                             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
@@ -482,7 +526,7 @@ export default function FieldComplaints({
                                                 {r.reference_no}
                                             </Link>
                                         </td>
-                                        <td className="max-w-xs px-4 py-3">
+                                        <td className="max-w-[16rem] px-4 py-3 lg:max-w-xs">
                                             <p className="truncate">
                                                 {r.title}
                                             </p>
@@ -529,22 +573,99 @@ export default function FieldComplaints({
                     </table>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500">
+                {/* Mobile: cards */}
+                <ul className="divide-y divide-slate-100 md:hidden">
+                    {complaints.data.length ? (
+                        complaints.data.map((r) => (
+                            <li key={r.complaint_id}>
+                                <Link
+                                    href={`/field/complaints/${r.complaint_id}`}
+                                    className={`block border-l-4 px-4 py-3.5 active:bg-slate-50 ${PRIORITY_EDGE[r.priority] ?? "border-l-slate-200"}`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <span className="text-sm font-semibold break-all text-[#15803d]">
+                                            {r.reference_no}
+                                        </span>
+                                        <span
+                                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_CLS[r.priority] ?? ""}`}
+                                        >
+                                            {cap(r.priority)}
+                                        </span>
+                                    </div>
+
+                                    <p className="mt-1.5 line-clamp-2 text-sm font-medium text-slate-800">
+                                        {r.title}
+                                    </p>
+                                    <p className="mt-0.5 truncate text-xs text-slate-400">
+                                        {r.category_name || "Uncategorized"}
+                                    </p>
+
+                                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLS[r.status_code] ?? "bg-slate-100 text-slate-700"}`}
+                                        >
+                                            {r.status_name}
+                                        </span>
+                                        {Number(r.is_overdue) === 1 && (
+                                            <span className="text-xs font-semibold text-red-700">
+                                                Overdue
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-2.5 flex items-end justify-between gap-2">
+                                        <dl className="min-w-0 space-y-1 text-xs text-slate-500">
+                                            {r.municipality && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <dt className="sr-only">
+                                                        Location
+                                                    </dt>
+                                                    <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                                    <dd className="truncate">
+                                                        {r.municipality}
+                                                    </dd>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-1.5">
+                                                <dt className="sr-only">
+                                                    Received
+                                                </dt>
+                                                <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                                <dd>{fmt(r.received_at)}</dd>
+                                            </div>
+                                        </dl>
+                                        <ChevronRight
+                                            className="h-5 w-5 shrink-0 text-slate-300"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                </Link>
+                            </li>
+                        ))
+                    ) : (
+                        <li className="px-4 py-12 text-center text-sm text-slate-400">
+                            No complaints match these filters.
+                        </li>
+                    )}
+                </ul>
+
+                {/* Pagination */}
+                <div className="flex flex-col items-center gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:justify-between">
                     <p>
                         {complaints.total
                             ? `Showing ${start}–${end} of ${complaints.total.toLocaleString()}`
                             : "0 results"}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                         <button
                             type="button"
                             disabled={complaints.current_page <= 1}
                             onClick={() => go(f, complaints.current_page - 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
                         >
                             Previous
                         </button>
-                        <span>
+                        <span className="text-center">
                             Page {complaints.current_page} of{" "}
                             {complaints.last_page}
                         </span>
@@ -554,7 +675,7 @@ export default function FieldComplaints({
                                 complaints.current_page >= complaints.last_page
                             }
                             onClick={() => go(f, complaints.current_page + 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
                         >
                             Next
                         </button>
@@ -567,7 +688,7 @@ export default function FieldComplaints({
                 <div
                     role={toast.type === "error" ? "alert" : "status"}
                     aria-live={toast.type === "error" ? "assertive" : "polite"}
-                    className={`fixed right-5 bottom-5 z-[70] flex max-w-sm items-start gap-2 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${toast.type === "error" ? "bg-red-700" : "bg-[#0f3d2e]"}`}
+                    className={`fixed inset-x-3 bottom-3 z-[70] flex items-start gap-2 rounded-xl px-4 py-3 text-sm text-white shadow-lg sm:inset-x-auto sm:right-5 sm:bottom-5 sm:max-w-sm ${toast.type === "error" ? "bg-red-700" : "bg-[#0f3d2e]"}`}
                 >
                     {toast.type === "error" ? (
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -577,7 +698,8 @@ export default function FieldComplaints({
                     <span>{toast.text}</span>
                 </div>
             )}
-            {/* Record complaint modal */}
+
+            {/* Record complaint modal (full-screen sheet on mobile) */}
             {open && (
                 <div
                     className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
@@ -585,12 +707,12 @@ export default function FieldComplaints({
                     aria-modal="true"
                     aria-labelledby="modalTitle"
                 >
-                    <div className="flex min-h-full items-start justify-center p-4 sm:p-8">
-                        <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
-                            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                    <div className="flex min-h-full items-start justify-center sm:p-8">
+                        <div className="flex min-h-dvh w-full max-w-3xl flex-col bg-white shadow-2xl sm:min-h-0 sm:rounded-2xl">
+                            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:rounded-t-2xl sm:px-6 sm:py-4">
                                 <h2
                                     id="modalTitle"
-                                    className="text-xl text-[#0f3d2e]"
+                                    className="text-lg text-[#0f3d2e] sm:text-xl"
                                     style={serif}
                                 >
                                     Record a complaint
@@ -599,363 +721,401 @@ export default function FieldComplaints({
                                     type="button"
                                     onClick={closeForm}
                                     aria-label="Close"
-                                    className="h-9 w-9 rounded-lg text-slate-500 hover:bg-slate-100"
+                                    className="h-10 w-10 rounded-lg text-slate-500 hover:bg-slate-100 sm:h-9 sm:w-9"
                                 >
-                                    <X className="mx-auto h-4 w-4" />
+                                    <X className="mx-auto h-5 w-5 sm:h-4 sm:w-4" />
                                 </button>
                             </div>
 
                             <form
                                 onSubmit={submit}
                                 noValidate
-                                className="space-y-6 px-6 py-5"
+                                className="flex flex-1 flex-col"
                             >
-                                {hasErrors && (
-                                    <div
-                                        role="alert"
-                                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                                    >
-                                        {bannerText}
-                                    </div>
-                                )}
+                                <div className="flex-1 space-y-6 px-4 py-5 sm:px-6">
+                                    {hasErrors && (
+                                        <div
+                                            role="alert"
+                                            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                                        >
+                                            {bannerText}
+                                        </div>
+                                    )}
 
-                                <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
-                                    This complaint will be recorded as coming
-                                    from{" "}
-                                    <span className="font-semibold">
-                                        {office.name}
-                                    </span>{" "}
-                                    and assigned to your office.
-                                </p>
-
-                                <fieldset className="space-y-4">
-                                    <legend className="mb-1 font-semibold text-slate-700">
-                                        Complaint details
-                                    </legend>
-                                    <Field
-                                        label={
-                                            <>
-                                                Title or subject
-                                                <Req />
-                                            </>
-                                        }
-                                        htmlFor="title"
-                                        error={err("title")}
-                                    >
-                                        <input
-                                            className={fieldCls}
-                                            maxLength={200}
-                                            autoFocus
-                                            {...bind("title")}
-                                        />
-                                    </Field>
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <Field
-                                            label="Category"
-                                            htmlFor="category_id"
-                                            error={err("category_id")}
-                                        >
-                                            <select
-                                                className={fieldCls}
-                                                {...bind("category_id")}
-                                            >
-                                                <option value="">
-                                                    Select category
-                                                </option>
-                                                {options.categories.map((o) => (
-                                                    <option
-                                                        key={o.category_id}
-                                                        value={o.category_id}
-                                                    >
-                                                        {o.category_name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </Field>
-                                        <Field
-                                            label="Priority"
-                                            htmlFor="priority"
-                                            error={err("priority")}
-                                        >
-                                            <select
-                                                className={fieldCls}
-                                                {...bind("priority")}
-                                            >
-                                                <option value="low">Low</option>
-                                                <option value="normal">
-                                                    Normal
-                                                </option>
-                                                <option value="high">
-                                                    High
-                                                </option>
-                                                <option value="urgent">
-                                                    Urgent
-                                                </option>
-                                            </select>
-                                        </Field>
-                                    </div>
-                                    <Field
-                                        label={
-                                            <>
-                                                Description
-                                                <Req />
-                                            </>
-                                        }
-                                        htmlFor="description"
-                                        error={err("description")}
-                                    >
-                                        <textarea
-                                            rows={5}
-                                            className={fieldCls}
-                                            {...bind("description")}
-                                        />
-                                    </Field>
-                                </fieldset>
-
-                                <fieldset className="space-y-4">
-                                    <legend className="mb-1 font-semibold text-slate-700">
-                                        How and when it was received
-                                    </legend>
-                                    <div className="grid gap-4 sm:grid-cols-3">
-                                        <Field
-                                            label={
-                                                <>
-                                                    Channel
-                                                    <Req />
-                                                </>
-                                            }
-                                            htmlFor="received_channel"
-                                            error={err("received_channel")}
-                                        >
-                                            <select
-                                                className={fieldCls}
-                                                {...bind("received_channel")}
-                                            >
-                                                <option value="">
-                                                    Select channel
-                                                </option>
-                                                <option value="phone">
-                                                    Phone call
-                                                </option>
-                                                <option value="email">
-                                                    Email
-                                                </option>
-                                                <option value="letter">
-                                                    Letter
-                                                </option>
-                                                <option value="walk_in">
-                                                    Walk-in
-                                                </option>
-                                                <option value="referral">
-                                                    Referral
-                                                </option>
-                                                <option value="social_media">
-                                                    Social media
-                                                </option>
-                                                <option value="other">
-                                                    Other
-                                                </option>
-                                            </select>
-                                        </Field>
-                                        <Field
-                                            label={
-                                                <>
-                                                    Date and time received
-                                                    <Req />
-                                                </>
-                                            }
-                                            htmlFor="received_at"
-                                            error={err("received_at")}
-                                        >
-                                            <input
-                                                type="datetime-local"
-                                                className={fieldCls}
-                                                max={nowLocal()}
-                                                {...bind("received_at")}
-                                            />
-                                        </Field>
-                                        <Field
-                                            label="Date and time of incident"
-                                            htmlFor="incident_datetime"
-                                            error={err("incident_datetime")}
-                                            hint="Leave blank if unknown."
-                                        >
-                                            <input
-                                                type="datetime-local"
-                                                className={fieldCls}
-                                                max={nowLocal()}
-                                                {...bind("incident_datetime")}
-                                            />
-                                        </Field>
-                                    </div>
-                                    <div className="sm:w-1/3">
-                                        <Field
-                                            label="Target response date"
-                                            htmlFor="target_date"
-                                            error={err("target_date")}
-                                        >
-                                            <input
-                                                type="date"
-                                                className={fieldCls}
-                                                min={TODAY}
-                                                {...bind("target_date")}
-                                            />
-                                        </Field>
-                                    </div>
-                                </fieldset>
-
-                                <fieldset className="space-y-4">
-                                    <legend className="mb-1 font-semibold text-slate-700">
-                                        Incident location
-                                    </legend>
-                                    <p className="text-xs text-slate-400">
-                                        Complaints are accepted only for
-                                        incidents within Region IV-A
-                                        (CALABARZON).
+                                    <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+                                        This complaint will be recorded as
+                                        coming from{" "}
+                                        <span className="font-semibold">
+                                            {office.name}
+                                        </span>{" "}
+                                        and assigned to your office.
                                     </p>
-                                    <div className="grid gap-4 sm:grid-cols-3">
-                                        <Field
-                                            label="Province"
-                                            htmlFor="province_id"
-                                            error={err("province_id")}
-                                        >
-                                            <select
-                                                className={fieldCls}
-                                                {...bind("province_id")}
-                                            >
-                                                <option value="">
-                                                    Unknown
-                                                </option>
-                                                {options.provinces.map((o) => (
-                                                    <option
-                                                        key={o.province_id}
-                                                        value={o.province_id}
-                                                    >
-                                                        {o.province_name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </Field>
-                                        <Field
-                                            label="Municipality or city"
-                                            htmlFor="municipality"
-                                            error={err("municipality")}
-                                        >
-                                            <input
-                                                className={fieldCls}
-                                                maxLength={100}
-                                                {...bind("municipality")}
-                                            />
-                                        </Field>
-                                        <Field
-                                            label="Barangay"
-                                            htmlFor="barangay"
-                                            error={err("barangay")}
-                                        >
-                                            <input
-                                                className={fieldCls}
-                                                maxLength={100}
-                                                {...bind("barangay")}
-                                            />
-                                        </Field>
-                                    </div>
-                                    <Field
-                                        label="Specific location"
-                                        htmlFor="specific_location"
-                                        error={err("specific_location")}
-                                    >
-                                        <input
-                                            className={fieldCls}
-                                            maxLength={255}
-                                            placeholder="Landmark, sitio, or other details"
-                                            {...bind("specific_location")}
-                                        />
-                                    </Field>
-                                </fieldset>
 
-                                <fieldset className="space-y-4">
-                                    <legend className="mb-1 font-semibold text-slate-700">
-                                        Complainant
-                                    </legend>
-                                    <label className="flex items-center gap-2 text-sm text-slate-600">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300"
-                                            checked={data.is_anonymous}
-                                            onChange={(e) =>
-                                                toggleAnonymous(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                        Anonymous complainant
-                                    </label>
-                                    <div className="grid gap-4 sm:grid-cols-3">
+                                    <fieldset className="min-w-0 space-y-4">
+                                        <legend className="mb-1 font-semibold text-slate-700">
+                                            Complaint details
+                                        </legend>
                                         <Field
-                                            label="Name"
-                                            htmlFor="complainant_name"
-                                            error={err("complainant_name")}
+                                            label={
+                                                <>
+                                                    Title or subject
+                                                    <Req />
+                                                </>
+                                            }
+                                            htmlFor="title"
+                                            error={err("title")}
                                         >
                                             <input
                                                 className={fieldCls}
-                                                maxLength={150}
-                                                autoComplete="off"
-                                                disabled={data.is_anonymous}
-                                                {...bind("complainant_name")}
+                                                maxLength={200}
+                                                autoFocus
+                                                {...bind("title")}
                                             />
                                         </Field>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <Field
+                                                label="Category"
+                                                htmlFor="category_id"
+                                                error={err("category_id")}
+                                            >
+                                                <select
+                                                    className={fieldCls}
+                                                    {...bind("category_id")}
+                                                >
+                                                    <option value="">
+                                                        Select category
+                                                    </option>
+                                                    {options.categories.map(
+                                                        (o) => (
+                                                            <option
+                                                                key={
+                                                                    o.category_id
+                                                                }
+                                                                value={
+                                                                    o.category_id
+                                                                }
+                                                            >
+                                                                {
+                                                                    o.category_name
+                                                                }
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select>
+                                            </Field>
+                                            <Field
+                                                label="Priority"
+                                                htmlFor="priority"
+                                                error={err("priority")}
+                                            >
+                                                <select
+                                                    className={fieldCls}
+                                                    {...bind("priority")}
+                                                >
+                                                    <option value="low">
+                                                        Low
+                                                    </option>
+                                                    <option value="normal">
+                                                        Normal
+                                                    </option>
+                                                    <option value="high">
+                                                        High
+                                                    </option>
+                                                    <option value="urgent">
+                                                        Urgent
+                                                    </option>
+                                                </select>
+                                            </Field>
+                                        </div>
                                         <Field
-                                            label="Contact number"
-                                            htmlFor="complainant_contact"
-                                            error={err("complainant_contact")}
+                                            label={
+                                                <>
+                                                    Description
+                                                    <Req />
+                                                </>
+                                            }
+                                            htmlFor="description"
+                                            error={err("description")}
+                                        >
+                                            <textarea
+                                                rows={5}
+                                                className={fieldCls}
+                                                {...bind("description")}
+                                            />
+                                        </Field>
+                                    </fieldset>
+
+                                    <fieldset className="min-w-0 space-y-4">
+                                        <legend className="mb-1 font-semibold text-slate-700">
+                                            How and when it was received
+                                        </legend>
+                                        <div className="grid gap-4 sm:grid-cols-3">
+                                            <Field
+                                                label={
+                                                    <>
+                                                        Channel
+                                                        <Req />
+                                                    </>
+                                                }
+                                                htmlFor="received_channel"
+                                                error={err("received_channel")}
+                                            >
+                                                <select
+                                                    className={fieldCls}
+                                                    {...bind(
+                                                        "received_channel",
+                                                    )}
+                                                >
+                                                    <option value="">
+                                                        Select channel
+                                                    </option>
+                                                    <option value="phone">
+                                                        Phone call
+                                                    </option>
+                                                    <option value="email">
+                                                        Email
+                                                    </option>
+                                                    <option value="letter">
+                                                        Letter
+                                                    </option>
+                                                    <option value="walk_in">
+                                                        Walk-in
+                                                    </option>
+                                                    <option value="referral">
+                                                        Referral
+                                                    </option>
+                                                    <option value="social_media">
+                                                        Social media
+                                                    </option>
+                                                    <option value="other">
+                                                        Other
+                                                    </option>
+                                                </select>
+                                            </Field>
+                                            <Field
+                                                label={
+                                                    <>
+                                                        Date and time received
+                                                        <Req />
+                                                    </>
+                                                }
+                                                htmlFor="received_at"
+                                                error={err("received_at")}
+                                            >
+                                                <input
+                                                    type="datetime-local"
+                                                    className={fieldCls}
+                                                    max={nowLocal()}
+                                                    {...bind("received_at")}
+                                                />
+                                            </Field>
+                                            <Field
+                                                label="Date and time of incident"
+                                                htmlFor="incident_datetime"
+                                                error={err("incident_datetime")}
+                                                hint="Leave blank if unknown."
+                                            >
+                                                <input
+                                                    type="datetime-local"
+                                                    className={fieldCls}
+                                                    max={nowLocal()}
+                                                    {...bind(
+                                                        "incident_datetime",
+                                                    )}
+                                                />
+                                            </Field>
+                                        </div>
+                                        <div className="sm:w-1/3">
+                                            <Field
+                                                label="Target response date"
+                                                htmlFor="target_date"
+                                                error={err("target_date")}
+                                            >
+                                                <input
+                                                    type="date"
+                                                    className={fieldCls}
+                                                    min={TODAY}
+                                                    {...bind("target_date")}
+                                                />
+                                            </Field>
+                                        </div>
+                                    </fieldset>
+
+                                    <fieldset className="min-w-0 space-y-4">
+                                        <legend className="mb-1 font-semibold text-slate-700">
+                                            Incident location
+                                        </legend>
+                                        <p className="text-xs text-slate-400">
+                                            Complaints are accepted only for
+                                            incidents within Region IV-A
+                                            (CALABARZON).
+                                        </p>
+                                        <div className="grid gap-4 sm:grid-cols-3">
+                                            <Field
+                                                label="Province"
+                                                htmlFor="province_id"
+                                                error={err("province_id")}
+                                            >
+                                                <select
+                                                    className={fieldCls}
+                                                    {...bind("province_id")}
+                                                >
+                                                    <option value="">
+                                                        Unknown
+                                                    </option>
+                                                    {options.provinces.map(
+                                                        (o) => (
+                                                            <option
+                                                                key={
+                                                                    o.province_id
+                                                                }
+                                                                value={
+                                                                    o.province_id
+                                                                }
+                                                            >
+                                                                {
+                                                                    o.province_name
+                                                                }
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select>
+                                            </Field>
+                                            <Field
+                                                label="Municipality or city"
+                                                htmlFor="municipality"
+                                                error={err("municipality")}
+                                            >
+                                                <input
+                                                    className={fieldCls}
+                                                    maxLength={100}
+                                                    {...bind("municipality")}
+                                                />
+                                            </Field>
+                                            <Field
+                                                label="Barangay"
+                                                htmlFor="barangay"
+                                                error={err("barangay")}
+                                            >
+                                                <input
+                                                    className={fieldCls}
+                                                    maxLength={100}
+                                                    {...bind("barangay")}
+                                                />
+                                            </Field>
+                                        </div>
+                                        <Field
+                                            label="Specific location"
+                                            htmlFor="specific_location"
+                                            error={err("specific_location")}
                                         >
                                             <input
-                                                type="tel"
-                                                inputMode="numeric"
-                                                pattern="[0-9]{11}"
                                                 className={fieldCls}
-                                                maxLength={11}
-                                                autoComplete="off"
-                                                placeholder="09XXXXXXXXX"
-                                                disabled={data.is_anonymous}
-                                                value={data.complainant_contact}
-                                                aria-invalid={bad(
+                                                maxLength={255}
+                                                placeholder="Landmark, sitio, or other details"
+                                                {...bind("specific_location")}
+                                            />
+                                        </Field>
+                                    </fieldset>
+
+                                    <fieldset className="min-w-0 space-y-4">
+                                        <legend className="mb-1 font-semibold text-slate-700">
+                                            Complainant
+                                        </legend>
+                                        <label className="flex items-center gap-2 py-1 text-sm text-slate-600">
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-slate-300"
+                                                checked={data.is_anonymous}
+                                                onChange={(e) =>
+                                                    toggleAnonymous(
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                            />
+                                            Anonymous complainant
+                                        </label>
+                                        <div className="grid gap-4 sm:grid-cols-3">
+                                            <Field
+                                                label="Name"
+                                                htmlFor="complainant_name"
+                                                error={err("complainant_name")}
+                                            >
+                                                <input
+                                                    className={fieldCls}
+                                                    maxLength={150}
+                                                    autoComplete="off"
+                                                    disabled={data.is_anonymous}
+                                                    {...bind(
+                                                        "complainant_name",
+                                                    )}
+                                                />
+                                            </Field>
+                                            <Field
+                                                label="Contact number"
+                                                htmlFor="complainant_contact"
+                                                error={err(
                                                     "complainant_contact",
                                                 )}
-                                                onChange={(e) => {
-                                                    const value = e.target.value
-                                                        .replace(/\D/g, "")
-                                                        .slice(0, 11);
-
-                                                    setData(
+                                            >
+                                                <input
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]{11}"
+                                                    className={fieldCls}
+                                                    maxLength={11}
+                                                    autoComplete="off"
+                                                    placeholder="09XXXXXXXXX"
+                                                    disabled={data.is_anonymous}
+                                                    value={
+                                                        data.complainant_contact
+                                                    }
+                                                    aria-invalid={bad(
                                                         "complainant_contact",
-                                                        value,
-                                                    );
-                                                }}
-                                            />
-                                        </Field>
-                                        <Field
-                                            label="Email"
-                                            htmlFor="complainant_email"
-                                            error={err("complainant_email")}
-                                        >
-                                            <input
-                                                type="email"
-                                                className={fieldCls}
-                                                maxLength={150}
-                                                autoComplete="off"
-                                                disabled={data.is_anonymous}
-                                                {...bind("complainant_email")}
-                                            />
-                                        </Field>
-                                    </div>
-                                    <p className="text-xs text-slate-400">
-                                        Collect only the personal details that
-                                        are needed to act on the complaint.
-                                    </p>
-                                </fieldset>
+                                                    )}
+                                                    onChange={(e) => {
+                                                        const value =
+                                                            e.target.value
+                                                                .replace(
+                                                                    /\D/g,
+                                                                    "",
+                                                                )
+                                                                .slice(0, 11);
 
-                                <div className="flex justify-end gap-3 border-t border-slate-200 pt-2">
+                                                        setData(
+                                                            "complainant_contact",
+                                                            value,
+                                                        );
+                                                    }}
+                                                />
+                                            </Field>
+                                            <Field
+                                                label="Email"
+                                                htmlFor="complainant_email"
+                                                error={err("complainant_email")}
+                                            >
+                                                <input
+                                                    type="email"
+                                                    className={fieldCls}
+                                                    maxLength={150}
+                                                    autoComplete="off"
+                                                    disabled={data.is_anonymous}
+                                                    {...bind(
+                                                        "complainant_email",
+                                                    )}
+                                                />
+                                            </Field>
+                                        </div>
+                                        <p className="text-xs text-slate-400">
+                                            Collect only the personal details
+                                            that are needed to act on the
+                                            complaint.
+                                        </p>
+                                    </fieldset>
+                                </div>
+
+                                {/* Sticky action bar so Save is always reachable on phones */}
+                                <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-slate-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:flex-row sm:justify-end sm:gap-3 sm:rounded-b-2xl sm:px-6 sm:pb-3">
                                     <button
                                         type="button"
                                         onClick={closeForm}

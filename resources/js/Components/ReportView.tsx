@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "@inertiajs/react";
-import { FileSpreadsheet, Search } from "lucide-react";
+import {
+    ChevronDown,
+    FileSpreadsheet,
+    Search,
+    SlidersHorizontal,
+} from "lucide-react";
 
 export interface Option {
     id: number;
@@ -60,8 +65,9 @@ export interface ReportViewProps {
     description: ReactNode;
 }
 
+// text-base on phones stops iOS Safari from zooming into focused inputs
 const FIELD =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200";
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:border-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200";
 const LABEL = "mb-1 block text-xs font-semibold text-slate-600";
 
 const STATUS_CLS: Record<string, string> = {
@@ -137,7 +143,7 @@ function Field({
     children: ReactNode;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label className={LABEL} htmlFor={id}>
                 {label}
             </label>
@@ -176,6 +182,25 @@ function Select({
                 </option>
             ))}
         </select>
+    );
+}
+
+function Badges({ r }: { r: ComplaintRow }) {
+    return (
+        <>
+            <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    STATUS_CLS[r.status_code] ?? "bg-slate-100 text-slate-700"
+                }`}
+            >
+                {r.status_name}
+            </span>
+            {Number(r.is_overdue) === 1 && (
+                <span className="text-xs font-semibold text-red-700">
+                    Overdue
+                </span>
+            )}
+        </>
     );
 }
 
@@ -245,6 +270,7 @@ export default function ReportView({
     const [loading, setLoading] = useState(true);
     const [serverError, setServerError] = useState("");
     const [toast, setToast] = useState("");
+    const [filtersOpen, setFiltersOpen] = useState(false); // phones only
     const abortRef = useRef<AbortController | null>(null);
     const reqRef = useRef(0);
 
@@ -256,6 +282,11 @@ export default function ReportView({
             return "The start date must be on or before the end date.";
         return "";
     }, [filters.from, filters.to, today]);
+
+    // Number of active filters (search box excluded) for the mobile toggle badge
+    const activeCount = FILTER_KEYS.filter(
+        (k) => k !== "q" && filters[k],
+    ).length;
 
     const set = (key: keyof Filters) => (value: string) => {
         setFilters((f) => ({ ...f, [key]: value }));
@@ -354,35 +385,67 @@ export default function ReportView({
 
     return (
         <>
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+                {/* Description + export: stacked on phones */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     <p className="text-sm text-slate-600">{description}</p>
                     <button
                         type="button"
                         onClick={exportExcel}
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#0f3d2e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d] focus:outline-none focus:ring-4 focus:ring-green-200"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3d2e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d] focus:outline-none focus:ring-4 focus:ring-green-200 sm:w-auto"
                     >
                         <FileSpreadsheet className="h-4 w-4" />
                         Export to Excel
                     </button>
                 </div>
 
-                <div className="relative max-w-md">
-                    <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <label htmlFor="q" className="sr-only">
-                        Search
-                    </label>
-                    <input
-                        type="search"
-                        id="q"
-                        className={`${FIELD} pl-10`}
-                        placeholder="Search reference, subject or location"
-                        value={qInput}
-                        onChange={(e) => setQInput(e.target.value)}
-                    />
+                {/* Search + mobile filter toggle */}
+                <div className="flex items-center gap-2">
+                    <div className="relative min-w-0 flex-1 md:max-w-md">
+                        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <label htmlFor="q" className="sr-only">
+                            Search
+                        </label>
+                        <input
+                            type="search"
+                            id="q"
+                            className={`${FIELD} pl-10`}
+                            placeholder="Search reference, subject or location"
+                            value={qInput}
+                            onChange={(e) => setQInput(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setFiltersOpen((o) => !o)}
+                        aria-expanded={filtersOpen}
+                        aria-controls="report-filters"
+                        className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-green-200 md:hidden"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        <span className="hidden min-[400px]:inline">
+                            Filters
+                        </span>
+                        {activeCount > 0 && (
+                            <span className="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-[#0f3d2e] px-1 text-xs font-semibold text-white">
+                                {activeCount}
+                            </span>
+                        )}
+                        <ChevronDown
+                            className={`h-4 w-4 transition-transform ${
+                                filtersOpen ? "rotate-180" : ""
+                            }`}
+                        />
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                {/* Filters: collapsible on phones, always visible from md up */}
+                <div
+                    id="report-filters"
+                    className={`${
+                        filtersOpen ? "grid" : "hidden"
+                    } grid-cols-1 gap-3 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
+                >
                     <Field id="f_from" label="Received from">
                         <input
                             type="date"
@@ -479,7 +542,7 @@ export default function ReportView({
                 <button
                     type="button"
                     onClick={clearFilters}
-                    className="text-sm text-slate-500 underline hover:text-slate-800"
+                    className="py-1 text-sm text-slate-500 underline hover:text-slate-800"
                 >
                     Clear filters
                 </button>
@@ -488,14 +551,14 @@ export default function ReportView({
             {error && (
                 <div
                     role="alert"
-                    className="flex items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700"
+                    className="flex flex-col gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
                 >
                     <span>{error}</span>
                     {!dateError && (
                         <button
                             type="button"
                             onClick={() => void load()}
-                            className="font-semibold underline"
+                            className="self-start font-semibold underline sm:self-auto"
                         >
                             Try again
                         </button>
@@ -504,7 +567,102 @@ export default function ReportView({
             )}
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <div className="overflow-x-auto" aria-busy={loading}>
+                {/* ───── Phone / small tablet: card list ───── */}
+                <ul
+                    className="divide-y divide-slate-100 md:hidden"
+                    aria-busy={loading}
+                >
+                    {loading &&
+                        Array.from({ length: 4 }, (_, i) => (
+                            <li key={`ck${i}`} className="space-y-2 p-4">
+                                <div className="h-4 w-1/3 animate-pulse rounded bg-slate-200" />
+                                <div className="h-5 w-4/5 animate-pulse rounded bg-slate-200" />
+                                <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+                            </li>
+                        ))}
+
+                    {!loading &&
+                        data.rows.map((r) => (
+                            <li key={r.complaint_id} className="p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <Link
+                                        className="font-semibold text-[#0f3d2e] hover:underline"
+                                        href={`${complaintBase}/${r.complaint_id}`}
+                                    >
+                                        {r.reference_no}
+                                    </Link>
+                                    <span
+                                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            PRIORITY_CLS[r.priority] ?? ""
+                                        }`}
+                                    >
+                                        {cap(r.priority)}
+                                    </span>
+                                </div>
+
+                                <p className="mt-1 break-words text-sm font-medium text-slate-800">
+                                    {r.title}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                    {r.category_name || "Uncategorized"}
+                                </p>
+
+                                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <Badges r={r} />
+                                </div>
+
+                                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                                    <div className="col-span-2">
+                                        <dt className="text-slate-400">
+                                            Location
+                                        </dt>
+                                        <dd className="break-words text-slate-600">
+                                            {place(r)}
+                                        </dd>
+                                    </div>
+                                    {admin && (
+                                        <div className="col-span-2">
+                                            <dt className="text-slate-400">
+                                                Office
+                                            </dt>
+                                            <dd className="break-words text-slate-600">
+                                                {r.office_name ||
+                                                    "Not yet assigned"}
+                                            </dd>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <dt className="text-slate-400">
+                                            Received
+                                        </dt>
+                                        <dd className="text-slate-600">
+                                            {fmt(r.received_at) || "—"}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-slate-400">
+                                            Target date
+                                        </dt>
+                                        <dd className="text-slate-600">
+                                            {fmtDate(r.target_date)}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </li>
+                        ))}
+
+                    {!loading && !data.rows.length && !error && (
+                        <li className="py-12 text-center text-sm text-slate-400">
+                            No complaints match these filters.
+                        </li>
+                    )}
+                </ul>
+
+                {/* ───── Tablet landscape / desktop: table ───── */}
+                <div
+                    className="hidden overflow-x-auto md:block"
+                    aria-busy={loading}
+                >
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50">
                             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
@@ -611,8 +769,9 @@ export default function ReportView({
                     </table>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500">
-                    <p>
+                {/* Pagination: stacked and centered on phones */}
+                <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <p className="text-center sm:text-left">
                         {data.total
                             ? `Showing ${start}–${Math.min(
                                   data.page * data.per_page,
@@ -620,23 +779,23 @@ export default function ReportView({
                               )} of ${data.total.toLocaleString()} complaints`
                             : "0 complaints"}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 sm:justify-end">
                         <button
                             type="button"
                             disabled={page <= 1}
                             onClick={() => setPage((p) => p - 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-4 py-2 hover:bg-slate-50 disabled:opacity-40 sm:px-3 sm:py-1.5"
                         >
                             Previous
                         </button>
-                        <span>
+                        <span className="whitespace-nowrap text-xs sm:text-sm">
                             Page {data.page} of {data.pages}
                         </span>
                         <button
                             type="button"
                             disabled={page >= data.pages}
                             onClick={() => setPage((p) => p + 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-4 py-2 hover:bg-slate-50 disabled:opacity-40 sm:px-3 sm:py-1.5"
                         >
                             Next
                         </button>
@@ -647,7 +806,7 @@ export default function ReportView({
             {toast && (
                 <div
                     role="status"
-                    className="fixed bottom-6 right-6 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg"
+                    className="fixed bottom-4 left-4 right-4 rounded-xl bg-slate-900 px-4 py-3 text-center text-sm text-white shadow-lg sm:bottom-6 sm:left-auto sm:right-6 sm:text-left"
                 >
                     {toast}
                 </div>
