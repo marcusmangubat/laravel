@@ -1,5 +1,15 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { AlertCircle, CheckCircle2, Plus, Search, X } from "lucide-react";
+import {
+    AlertCircle,
+    Building2,
+    CheckCircle2,
+    Clock,
+    Mail,
+    Plus,
+    Search,
+    SlidersHorizontal,
+    X,
+} from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import AdminLayout from "@/layouts/admin-layout";
 
@@ -33,8 +43,9 @@ type Office = {
 
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
+// text-base on mobile stops iOS Safari from zooming into focused inputs
 const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200 aria-[invalid=true]:border-red-500";
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200 aria-[invalid=true]:border-red-500";
 const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
 
 const fmt = (s: string | null) =>
@@ -77,7 +88,7 @@ function Field({
     children: ReactNode;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label htmlFor={htmlFor} className={lblCls}>
                 {label}
                 {required && <span className="text-red-600"> *</span>}
@@ -106,9 +117,13 @@ export default function Users({
     // ---- Filters ----
     const [f, setF] = useState<Filters>(filters);
     const [loading, setLoading] = useState(false);
+    const [showFilters, setShowFilters] = useState(false); // mobile only
     const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(
         undefined,
     );
+    const activeFilters = [f.office_id, f.is_active].filter(
+        (v) => v !== "",
+    ).length;
 
     const go = (next: Filters, pageNo = 1) => {
         const params: Record<string, string | number> = {};
@@ -312,9 +327,9 @@ export default function Users({
             <Head title="DENR RDAC IV-A – Field Office Accounts" />
 
             {/* Toolbar */}
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="relative max-w-md min-w-[16rem] flex-1">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="relative order-1 min-w-0 flex-1 basis-full sm:basis-64 md:max-w-md">
                         <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <label htmlFor="q" className="sr-only">
                             Search accounts
@@ -328,17 +343,38 @@ export default function Users({
                             onChange={(e) => setFilter("q", e.target.value)}
                         />
                     </div>
+
+                    {/* Filter toggle (mobile only) */}
+                    <button
+                        type="button"
+                        onClick={() => setShowFilters((v) => !v)}
+                        aria-expanded={showFilters}
+                        aria-controls="filterPanel"
+                        className="order-2 inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none md:hidden"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Filters
+                        {activeFilters > 0 && (
+                            <span className="rounded-full bg-[#15803d] px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">
+                                {activeFilters}
+                            </span>
+                        )}
+                    </button>
+
                     <button
                         type="button"
                         onClick={openForm}
-                        className="rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none"
+                        className="order-3 inline-flex flex-1 items-center justify-center rounded-xl bg-[#15803d] px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none sm:flex-none md:ml-auto"
                     >
-                        <Plus className="mr-2 inline h-4 w-4" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Create account
                     </button>
                 </div>
 
-                <div className="grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
+                <div
+                    id="filterPanel"
+                    className={`${showFilters ? "grid" : "hidden"} max-w-xl grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid`}
+                >
                     <Field label="Office" htmlFor="f_office">
                         <select
                             id="f_office"
@@ -375,7 +411,7 @@ export default function Users({
                 <button
                     type="button"
                     onClick={clearFilters}
-                    className="text-sm text-slate-500 underline hover:text-slate-800"
+                    className="py-1 text-sm text-slate-500 underline hover:text-slate-800"
                 >
                     Clear filters
                 </button>
@@ -384,16 +420,17 @@ export default function Users({
             {filterError && !open && (
                 <div
                     role="alert"
-                    className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700"
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:px-5"
                 >
                     {filterError}
                 </div>
             )}
 
-            {/* Table */}
+            {/* Results */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                {/* Desktop / tablet: table */}
                 <div
-                    className={`overflow-x-auto transition-opacity ${loading ? "opacity-50" : ""}`}
+                    className={`hidden overflow-x-auto transition-opacity md:block ${loading ? "opacity-50" : ""}`}
                     aria-busy={loading}
                 >
                     <table className="w-full text-sm">
@@ -448,25 +485,27 @@ export default function Users({
                                                     </p>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span
-                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}
-                                                >
-                                                    {active
-                                                        ? "Active"
-                                                        : "Deactivated"}
-                                                </span>
-                                                {u.is_locked === 1 && (
-                                                    <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                                                        Locked
+                                            <td className="px-4 py-3">
+                                                <div className="flex flex-wrap items-center gap-1">
+                                                    <span
+                                                        className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}
+                                                    >
+                                                        {active
+                                                            ? "Active"
+                                                            : "Deactivated"}
                                                     </span>
-                                                )}
-                                                {u.must_change_password ===
-                                                    1 && (
-                                                    <span className="ml-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">
-                                                        Must change password
-                                                    </span>
-                                                )}
+                                                    {u.is_locked === 1 && (
+                                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber-800">
+                                                            Locked
+                                                        </span>
+                                                    )}
+                                                    {u.must_change_password ===
+                                                        1 && (
+                                                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-sky-800">
+                                                            Must change password
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
                                                 {fmt(u.last_login_at)}
@@ -501,29 +540,131 @@ export default function Users({
                     </table>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500">
+                {/* Mobile: cards */}
+                <ul
+                    className={`divide-y divide-slate-100 transition-opacity md:hidden ${loading ? "opacity-50" : ""}`}
+                    aria-busy={loading}
+                >
+                    {users.data.length ? (
+                        users.data.map((u) => {
+                            const active = u.is_active === 1;
+                            return (
+                                <li
+                                    key={u.user_id}
+                                    className={`px-4 py-4 ${active ? "" : "bg-slate-50/60"}`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-slate-800">
+                                                {u.full_name}
+                                            </p>
+                                            <p className="truncate text-xs text-slate-400">
+                                                {u.position_title ||
+                                                    `@${u.username}`}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${active ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-600"}`}
+                                        >
+                                            {active ? "Active" : "Deactivated"}
+                                        </span>
+                                    </div>
+
+                                    {(u.is_locked === 1 ||
+                                        u.must_change_password === 1) && (
+                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                            {u.is_locked === 1 && (
+                                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                                    Locked
+                                                </span>
+                                            )}
+                                            {u.must_change_password === 1 && (
+                                                <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">
+                                                    Must change password
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <dl className="mt-3 space-y-1.5 text-xs text-slate-500">
+                                        <div className="flex items-center gap-1.5">
+                                            <dt className="sr-only">Office</dt>
+                                            <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                            <dd className="min-w-0">
+                                                {u.office_name || "—"}
+                                                {u.office_code && (
+                                                    <span className="text-slate-400">
+                                                        {" "}
+                                                        ({u.office_code})
+                                                    </span>
+                                                )}
+                                            </dd>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <dt className="sr-only">
+                                                Username and email
+                                            </dt>
+                                            <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                            <dd className="min-w-0 break-all">
+                                                {u.username} · {u.email}
+                                            </dd>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <dt className="sr-only">
+                                                Last sign-in
+                                            </dt>
+                                            <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                            <dd>
+                                                Last sign-in:{" "}
+                                                {fmt(u.last_login_at)}
+                                            </dd>
+                                        </div>
+                                    </dl>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => toggle(u)}
+                                        disabled={busyId !== null}
+                                        className={`mt-3 w-full rounded-xl border px-3 py-2.5 text-sm font-semibold disabled:opacity-50 ${active ? "border-red-200 text-red-700 hover:bg-red-50 active:bg-red-100" : "border-green-200 text-[#15803d] hover:bg-green-50 active:bg-green-100"}`}
+                                    >
+                                        {active
+                                            ? "Deactivate account"
+                                            : "Activate account"}
+                                    </button>
+                                </li>
+                            );
+                        })
+                    ) : (
+                        <li className="px-4 py-12 text-center text-sm text-slate-400">
+                            No field-office accounts match these filters.
+                        </li>
+                    )}
+                </ul>
+
+                {/* Pagination */}
+                <div className="flex flex-col items-center gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:justify-between">
                     <p>
                         {users.total
                             ? `Showing ${start}–${end} of ${users.total.toLocaleString()}`
                             : "0 results"}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                         <button
                             type="button"
                             disabled={users.current_page <= 1}
                             onClick={() => go(f, users.current_page - 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
                         >
                             Previous
                         </button>
-                        <span>
+                        <span className="text-center">
                             Page {users.current_page} of {users.last_page}
                         </span>
                         <button
                             type="button"
                             disabled={users.current_page >= users.last_page}
                             onClick={() => go(f, users.current_page + 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
                         >
                             Next
                         </button>
@@ -536,7 +677,7 @@ export default function Users({
                 <div
                     role={toast.type === "error" ? "alert" : "status"}
                     aria-live={toast.type === "error" ? "assertive" : "polite"}
-                    className={`fixed right-5 bottom-5 z-[70] flex max-w-md items-start gap-2 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${toast.type === "error" ? "bg-red-700" : "bg-[#0f3d2e]"}`}
+                    className={`fixed inset-x-3 bottom-3 z-[70] flex items-start gap-2 rounded-xl px-4 py-3 text-sm text-white shadow-lg sm:inset-x-auto sm:right-5 sm:bottom-5 sm:max-w-md ${toast.type === "error" ? "bg-red-700" : "bg-[#0f3d2e]"}`}
                 >
                     {toast.type === "error" ? (
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -547,7 +688,7 @@ export default function Users({
                 </div>
             )}
 
-            {/* Create account modal */}
+            {/* Create account modal (full-screen sheet on mobile) */}
             {open && (
                 <div
                     className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
@@ -555,12 +696,12 @@ export default function Users({
                     aria-modal="true"
                     aria-labelledby="modalTitle"
                 >
-                    <div className="flex min-h-full items-start justify-center p-4 sm:p-8">
-                        <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
-                            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                    <div className="flex min-h-full items-start justify-center sm:p-8">
+                        <div className="flex min-h-dvh w-full max-w-2xl flex-col bg-white shadow-2xl sm:min-h-0 sm:rounded-2xl">
+                            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:rounded-t-2xl sm:px-6 sm:py-4">
                                 <h2
                                     id="modalTitle"
-                                    className="text-xl text-[#0f3d2e]"
+                                    className="text-lg text-[#0f3d2e] sm:text-xl"
                                     style={serif}
                                 >
                                     Create a field-office account
@@ -569,245 +710,262 @@ export default function Users({
                                     type="button"
                                     onClick={closeForm}
                                     aria-label="Close"
-                                    className="h-9 w-9 rounded-lg text-slate-500 hover:bg-slate-100"
+                                    className="h-10 w-10 shrink-0 rounded-lg text-slate-500 hover:bg-slate-100 sm:h-9 sm:w-9"
                                 >
-                                    <X className="mx-auto h-4 w-4" />
+                                    <X className="mx-auto h-5 w-5 sm:h-4 sm:w-4" />
                                 </button>
                             </div>
 
                             <form
                                 onSubmit={submit}
                                 noValidate
-                                className="space-y-5 px-6 py-5"
+                                className="flex flex-1 flex-col"
                             >
-                                {Object.keys(errors).length > 0 && (
-                                    <div
-                                        role="alert"
-                                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                                    >
-                                        {(errors as Record<string, string>)
-                                            .form ||
-                                            "Please fix the highlighted fields."}
-                                    </div>
-                                )}
-                                <p className="text-sm text-slate-500">
-                                    This person will sign in to the field-office
-                                    workspace for the office you choose. They
-                                    must change the temporary password at first
-                                    sign-in.
-                                </p>
+                                <div className="flex-1 space-y-5 px-4 py-5 sm:px-6">
+                                    {Object.keys(errors).length > 0 && (
+                                        <div
+                                            role="alert"
+                                            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                                        >
+                                            {(errors as Record<string, string>)
+                                                .form ||
+                                                "Please fix the highlighted fields."}
+                                        </div>
+                                    )}
+                                    <p className="text-sm text-slate-500">
+                                        This person will sign in to the
+                                        field-office workspace for the office
+                                        you choose. They must change the
+                                        temporary password at first sign-in.
+                                    </p>
 
-                                <Field
-                                    label="Office"
-                                    htmlFor="office_id"
-                                    required
-                                    error={err("office_id")}
-                                >
-                                    <select
-                                        id="office_id"
-                                        className={fieldCls}
-                                        aria-invalid={bad("office_id")}
-                                        autoFocus
-                                        value={data.office_id}
-                                        onChange={(e) =>
-                                            setData("office_id", e.target.value)
-                                        }
-                                    >
-                                        <option value="">Select office</option>
-                                        {offices.map((o) => (
-                                            <option
-                                                key={o.office_id}
-                                                value={o.office_id}
-                                            >
-                                                {officeLabel(o)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </Field>
-
-                                <Field
-                                    label="Full name"
-                                    htmlFor="full_name"
-                                    required
-                                    error={err("full_name")}
-                                >
-                                    <input
-                                        id="full_name"
-                                        className={fieldCls}
-                                        maxLength={150}
-                                        autoComplete="name"
-                                        aria-invalid={bad("full_name")}
-                                        value={data.full_name}
-                                        onChange={(e) =>
-                                            setData("full_name", e.target.value)
-                                        }
-                                    />
-                                </Field>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
                                     <Field
-                                        label="Username"
-                                        htmlFor="username"
+                                        label="Office"
+                                        htmlFor="office_id"
                                         required
-                                        error={err("username")}
-                                        hint="Letters, numbers, periods and underscores."
+                                        error={err("office_id")}
                                     >
-                                        <input
-                                            id="username"
+                                        <select
+                                            id="office_id"
                                             className={fieldCls}
-                                            maxLength={60}
-                                            autoComplete="off"
-                                            aria-invalid={bad("username")}
-                                            value={data.username}
+                                            aria-invalid={bad("office_id")}
+                                            autoFocus
+                                            value={data.office_id}
                                             onChange={(e) =>
                                                 setData(
-                                                    "username",
+                                                    "office_id",
                                                     e.target.value,
                                                 )
                                             }
-                                        />
+                                        >
+                                            <option value="">
+                                                Select office
+                                            </option>
+                                            {offices.map((o) => (
+                                                <option
+                                                    key={o.office_id}
+                                                    value={o.office_id}
+                                                >
+                                                    {officeLabel(o)}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </Field>
+
                                     <Field
-                                        label="Email"
-                                        htmlFor="email"
+                                        label="Full name"
+                                        htmlFor="full_name"
                                         required
-                                        error={err("email")}
+                                        error={err("full_name")}
                                     >
                                         <input
-                                            id="email"
-                                            type="email"
+                                            id="full_name"
                                             className={fieldCls}
                                             maxLength={150}
-                                            autoComplete="off"
-                                            aria-invalid={bad("email")}
-                                            value={data.email}
-                                            onChange={(e) =>
-                                                setData("email", e.target.value)
-                                            }
-                                        />
-                                    </Field>
-                                </div>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field
-                                        label="Position"
-                                        htmlFor="position_title"
-                                        error={err("position_title")}
-                                    >
-                                        <input
-                                            id="position_title"
-                                            className={fieldCls}
-                                            maxLength={120}
-                                            autoComplete="off"
-                                            value={data.position_title}
+                                            autoComplete="name"
+                                            aria-invalid={bad("full_name")}
+                                            value={data.full_name}
                                             onChange={(e) =>
                                                 setData(
-                                                    "position_title",
+                                                    "full_name",
                                                     e.target.value,
                                                 )
                                             }
                                         />
                                     </Field>
-                                    <Field
-                                        label="Contact number"
-                                        htmlFor="contact_number"
-                                        error={err("contact_number")}
-                                    >
-                                        <input
-                                            id="contact_number"
-                                            type="tel"
-                                            inputMode="numeric"
-                                            pattern="[0-9]{11}"
-                                            className={fieldCls}
-                                            maxLength={11}
-                                            autoComplete="off"
-                                            placeholder="09XXXXXXXXX"
-                                            value={data.contact_number}
-                                            onChange={(e) => {
-                                                const value = e.target.value
-                                                    .replace(/\D/g, "")
-                                                    .slice(0, 11);
-                                                setData(
-                                                    "contact_number",
-                                                    value,
-                                                );
-                                            }}
-                                        />
-                                    </Field>
-                                </div>
 
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field
-                                        label="Temporary password"
-                                        htmlFor="password"
-                                        required
-                                        error={err("password")}
-                                        hint="At least 10 characters, with a letter and a number."
-                                    >
-                                        <input
-                                            id="password"
-                                            type={pwdType}
-                                            className={fieldCls}
-                                            maxLength={72}
-                                            autoComplete="new-password"
-                                            aria-invalid={bad("password")}
-                                            value={data.password}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "password",
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                    </Field>
-                                    <Field
-                                        label="Confirm password"
-                                        htmlFor="password_confirmation"
-                                        required
-                                        error={err("password_confirmation")}
-                                    >
-                                        <input
-                                            id="password_confirmation"
-                                            type={pwdType}
-                                            className={fieldCls}
-                                            maxLength={72}
-                                            autoComplete="new-password"
-                                            aria-invalid={bad(
-                                                "password_confirmation",
-                                            )}
-                                            value={data.password_confirmation}
-                                            onChange={(e) =>
-                                                setData(
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <Field
+                                            label="Username"
+                                            htmlFor="username"
+                                            required
+                                            error={err("username")}
+                                            hint="Letters, numbers, periods and underscores."
+                                        >
+                                            <input
+                                                id="username"
+                                                className={fieldCls}
+                                                maxLength={60}
+                                                autoComplete="off"
+                                                autoCapitalize="none"
+                                                aria-invalid={bad("username")}
+                                                value={data.username}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "username",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Email"
+                                            htmlFor="email"
+                                            required
+                                            error={err("email")}
+                                        >
+                                            <input
+                                                id="email"
+                                                type="email"
+                                                className={fieldCls}
+                                                maxLength={150}
+                                                autoComplete="off"
+                                                aria-invalid={bad("email")}
+                                                value={data.email}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "email",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <Field
+                                            label="Position"
+                                            htmlFor="position_title"
+                                            error={err("position_title")}
+                                        >
+                                            <input
+                                                id="position_title"
+                                                className={fieldCls}
+                                                maxLength={120}
+                                                autoComplete="off"
+                                                value={data.position_title}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "position_title",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Contact number"
+                                            htmlFor="contact_number"
+                                            error={err("contact_number")}
+                                        >
+                                            <input
+                                                id="contact_number"
+                                                type="tel"
+                                                inputMode="numeric"
+                                                pattern="[0-9]{11}"
+                                                className={fieldCls}
+                                                maxLength={11}
+                                                autoComplete="off"
+                                                placeholder="09XXXXXXXXX"
+                                                value={data.contact_number}
+                                                onChange={(e) => {
+                                                    const value = e.target.value
+                                                        .replace(/\D/g, "")
+                                                        .slice(0, 11);
+                                                    setData(
+                                                        "contact_number",
+                                                        value,
+                                                    );
+                                                }}
+                                            />
+                                        </Field>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <Field
+                                            label="Temporary password"
+                                            htmlFor="password"
+                                            required
+                                            error={err("password")}
+                                            hint="At least 10 characters, with a letter and a number."
+                                        >
+                                            <input
+                                                id="password"
+                                                type={pwdType}
+                                                className={fieldCls}
+                                                maxLength={72}
+                                                autoComplete="new-password"
+                                                aria-invalid={bad("password")}
+                                                value={data.password}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "password",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Confirm password"
+                                            htmlFor="password_confirmation"
+                                            required
+                                            error={err("password_confirmation")}
+                                        >
+                                            <input
+                                                id="password_confirmation"
+                                                type={pwdType}
+                                                className={fieldCls}
+                                                maxLength={72}
+                                                autoComplete="new-password"
+                                                aria-invalid={bad(
                                                     "password_confirmation",
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                    </Field>
+                                                )}
+                                                value={
+                                                    data.password_confirmation
+                                                }
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "password_confirmation",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={fillGenerated}
+                                            className="py-1 text-sm font-semibold text-[#15803d] hover:underline"
+                                        >
+                                            Generate a temporary password
+                                        </button>
+                                        <label className="flex items-center gap-2 py-1 text-sm text-slate-600">
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-slate-300"
+                                                checked={showPwd}
+                                                onChange={(e) =>
+                                                    setShowPwd(e.target.checked)
+                                                }
+                                            />
+                                            Show passwords
+                                        </label>
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={fillGenerated}
-                                        className="text-sm font-semibold text-[#15803d] hover:underline"
-                                    >
-                                        Generate a temporary password
-                                    </button>
-                                    <label className="flex items-center gap-2 text-sm text-slate-600">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300"
-                                            checked={showPwd}
-                                            onChange={(e) =>
-                                                setShowPwd(e.target.checked)
-                                            }
-                                        />
-                                        Show passwords
-                                    </label>
-                                </div>
-
-                                <div className="flex justify-end gap-3 border-t border-slate-200 pt-2">
+                                {/* Sticky action bar so the submit button is always reachable on phones */}
+                                <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-slate-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:flex-row sm:justify-end sm:gap-3 sm:rounded-b-2xl sm:px-6 sm:pb-3">
                                     <button
                                         type="button"
                                         onClick={closeForm}

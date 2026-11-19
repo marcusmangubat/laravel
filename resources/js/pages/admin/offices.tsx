@@ -1,5 +1,12 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Search } from "lucide-react";
+import {
+    CornerLeftUp,
+    Mail,
+    MapPin,
+    Phone,
+    Search,
+    SlidersHorizontal,
+} from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import AdminLayout from "@/layouts/admin-layout";
 
@@ -34,8 +41,9 @@ type Filters = {
     can_receive: string;
 };
 
+// text-base on mobile stops iOS Safari from zooming into focused inputs
 const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-green-200";
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200";
 const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
 
 function Field({
@@ -48,7 +56,7 @@ function Field({
     children: ReactNode;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label htmlFor={htmlFor} className={lblCls}>
                 {label}
             </label>
@@ -72,9 +80,20 @@ export default function Offices({
     const page = usePage<any>();
     const [f, setF] = useState<Filters>(filters);
     const [loading, setLoading] = useState(false);
+    const [showFilters, setShowFilters] = useState(false); // mobile only
     const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(
         undefined,
     );
+
+    // Number of active dropdown filters (excluding search) for the mobile badge
+    const activeFilters = (
+        [
+            "office_type",
+            "province_id",
+            "is_active",
+            "can_receive",
+        ] as (keyof Filters)[]
+    ).filter((k) => f[k] !== "").length;
 
     // Send the filters to the server as URL parameters
     const go = (next: Filters, pageNo = 1) => {
@@ -132,27 +151,49 @@ export default function Offices({
             <Head title="DENR RDAC IV-A – Office Directory" />
 
             {/* Filters */}
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
                 <p className="text-sm text-slate-600">
                     DENR Region IV-A offices that can receive complaints, field
                     accounts, and assignments.
                 </p>
-                <div className="relative max-w-md">
-                    <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <label htmlFor="q" className="sr-only">
-                        Search offices
-                    </label>
-                    <input
-                        id="q"
-                        type="search"
-                        className={`${fieldCls} pl-10`}
-                        placeholder="Search name, code, province, or parent office"
-                        value={f.q}
-                        onChange={(e) => setFilter("q", e.target.value)}
-                    />
+                <div className="flex items-center gap-2">
+                    <div className="relative min-w-0 flex-1 md:max-w-md">
+                        <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <label htmlFor="q" className="sr-only">
+                            Search offices
+                        </label>
+                        <input
+                            id="q"
+                            type="search"
+                            className={`${fieldCls} pl-10`}
+                            placeholder="Search name, code, province, or parent office"
+                            value={f.q}
+                            onChange={(e) => setFilter("q", e.target.value)}
+                        />
+                    </div>
+
+                    {/* Filter toggle (mobile only) */}
+                    <button
+                        type="button"
+                        onClick={() => setShowFilters((v) => !v)}
+                        aria-expanded={showFilters}
+                        aria-controls="filterPanel"
+                        aria-label="Toggle filters"
+                        className="relative inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:ring-4 focus:ring-green-200 focus:outline-none md:hidden"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        {activeFilters > 0 && (
+                            <span className="rounded-full bg-[#15803d] px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">
+                                {activeFilters}
+                            </span>
+                        )}
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div
+                    id="filterPanel"
+                    className={`${showFilters ? "grid" : "hidden"} grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid md:grid-cols-4`}
+                >
                     <Field label="Type" htmlFor="f_type">
                         <select
                             id="f_type"
@@ -225,7 +266,7 @@ export default function Offices({
                 <button
                     type="button"
                     onClick={clearFilters}
-                    className="text-sm text-slate-500 underline hover:text-slate-800"
+                    className="py-1 text-sm text-slate-500 underline hover:text-slate-800"
                 >
                     Clear filters
                 </button>
@@ -234,16 +275,17 @@ export default function Offices({
             {errorMsg && (
                 <div
                     role="alert"
-                    className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700"
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:px-5"
                 >
                     {errorMsg}
                 </div>
             )}
 
-            {/* Table */}
+            {/* Results */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                {/* Desktop / tablet: table */}
                 <div
-                    className={`overflow-x-auto transition-opacity ${loading ? "opacity-50" : ""}`}
+                    className={`hidden overflow-x-auto transition-opacity md:block ${loading ? "opacity-50" : ""}`}
                     aria-busy={loading}
                 >
                     <table className="w-full text-sm">
@@ -311,7 +353,7 @@ export default function Offices({
                                             <td className="px-4 py-3 text-slate-600">
                                                 {o.parent_name || "—"}
                                             </td>
-                                            <td className="max-w-xs px-4 py-3 text-xs break-words text-slate-500">
+                                            <td className="max-w-[14rem] px-4 py-3 text-xs break-words text-slate-500 lg:max-w-xs">
                                                 {contact}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
@@ -356,29 +398,165 @@ export default function Offices({
                     </table>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500">
+                {/* Mobile: cards */}
+                <ul
+                    className={`divide-y divide-slate-100 transition-opacity md:hidden ${loading ? "opacity-50" : ""}`}
+                    aria-busy={loading}
+                >
+                    {offices.data.length ? (
+                        offices.data.map((o) => {
+                            const active = o.is_active === 1;
+                            const can = o.can_receive_assignments === 1;
+                            return (
+                                <li
+                                    key={o.office_id}
+                                    className={`px-4 py-4 ${active ? "" : "bg-slate-50/60"}`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-slate-800">
+                                                {o.office_name}
+                                            </p>
+                                            <p className="text-xs text-slate-400">
+                                                {o.office_code}
+                                            </p>
+                                        </div>
+                                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                                            {o.type_label}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${can ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}
+                                        >
+                                            {can
+                                                ? "Can receive"
+                                                : "Cannot receive"}
+                                        </span>
+                                        {!active && (
+                                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                                Inactive
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {o.remarks && (
+                                        <p className="mt-2 text-xs text-slate-500">
+                                            {o.remarks}
+                                        </p>
+                                    )}
+
+                                    <dl className="mt-3 space-y-1.5 text-xs text-slate-500">
+                                        <div className="flex items-center gap-1.5">
+                                            <dt className="sr-only">
+                                                Province
+                                            </dt>
+                                            <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                            <dd>{o.province_name || "—"}</dd>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <dt className="sr-only">
+                                                Reports to
+                                            </dt>
+                                            <CornerLeftUp className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                            <dd className="min-w-0">
+                                                {o.parent_name || "—"}
+                                            </dd>
+                                        </div>
+                                        {o.contact_number && (
+                                            <div className="flex items-center gap-1.5">
+                                                <dt className="sr-only">
+                                                    Phone
+                                                </dt>
+                                                <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                                <dd>
+                                                    <a
+                                                        href={`tel:${o.contact_number}`}
+                                                        className="hover:underline"
+                                                    >
+                                                        {o.contact_number}
+                                                    </a>
+                                                </dd>
+                                            </div>
+                                        )}
+                                        {o.email && (
+                                            <div className="flex items-center gap-1.5">
+                                                <dt className="sr-only">
+                                                    Email
+                                                </dt>
+                                                <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                                <dd className="min-w-0 break-all">
+                                                    <a
+                                                        href={`mailto:${o.email}`}
+                                                        className="hover:underline"
+                                                    >
+                                                        {o.email}
+                                                    </a>
+                                                </dd>
+                                            </div>
+                                        )}
+                                    </dl>
+
+                                    {/* Big tap targets for the two drill-down links */}
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                        <Link
+                                            href={`/admin/users?office_id=${o.office_id}`}
+                                            className="rounded-xl border border-slate-200 px-3 py-2 text-center hover:bg-slate-50 active:bg-slate-100"
+                                        >
+                                            <span className="block text-base font-semibold text-[#15803d]">
+                                                {o.account_count}
+                                            </span>
+                                            <span className="block text-xs text-slate-500">
+                                                Accounts
+                                            </span>
+                                        </Link>
+                                        <Link
+                                            href={`/admin/complaints?office_id=${o.office_id}`}
+                                            className="rounded-xl border border-slate-200 px-3 py-2 text-center hover:bg-slate-50 active:bg-slate-100"
+                                        >
+                                            <span className="block text-base font-semibold text-[#15803d]">
+                                                {o.complaint_count}
+                                            </span>
+                                            <span className="block text-xs text-slate-500">
+                                                Complaints
+                                            </span>
+                                        </Link>
+                                    </div>
+                                </li>
+                            );
+                        })
+                    ) : (
+                        <li className="px-4 py-12 text-center text-sm text-slate-400">
+                            No offices match these filters.
+                        </li>
+                    )}
+                </ul>
+
+                {/* Pagination */}
+                <div className="flex flex-col items-center gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:justify-between">
                     <p>
                         {offices.total
                             ? `Showing ${start}–${end} of ${offices.total.toLocaleString()} offices`
                             : "0 offices"}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                         <button
                             type="button"
                             disabled={offices.current_page <= 1}
                             onClick={() => go(f, offices.current_page - 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
                         >
                             Previous
                         </button>
-                        <span>
+                        <span className="text-center">
                             Page {offices.current_page} of {offices.last_page}
                         </span>
                         <button
                             type="button"
                             disabled={offices.current_page >= offices.last_page}
                             onClick={() => go(f, offices.current_page + 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
                         >
                             Next
                         </button>
