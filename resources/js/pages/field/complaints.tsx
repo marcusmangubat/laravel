@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Field, Req, Select, fieldCls } from "@/Components/form-controls";
 import {
     AlertCircle,
     CheckCircle2,
@@ -101,39 +102,6 @@ const todayStr = () => {
 };
 const nowLocal = () =>
     `${todayStr()}T${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
-
-// text-base on mobile stops iOS Safari from zooming into focused inputs
-const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
-
-function Field({
-    label,
-    htmlFor,
-    error,
-    hint,
-    children,
-}: {
-    label: ReactNode;
-    htmlFor: string;
-    error?: string;
-    hint?: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="min-w-0">
-            <label htmlFor={htmlFor} className={lblCls}>
-                {label}
-            </label>
-            {children}
-            {hint && !error && (
-                <p className="mt-1 text-xs text-slate-400">{hint}</p>
-            )}
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        </div>
-    );
-}
-const Req = () => <span className="text-red-600"> *</span>;
 
 const emptyForm = {
     title: "",
@@ -355,7 +323,7 @@ export default function FieldComplaints({
     // "form" = a general problem from the server (e.g. office inactive); other keys are field errors
     const bannerText = errorMap.form || "Please fix the highlighted fields.";
 
-    // Props shared by plain text / select / textarea inputs
+    // Props shared by plain text / Select / textarea inputs
     const bind = (k: TextKey) => ({
         id: k,
         value: data[k],
@@ -429,7 +397,7 @@ export default function FieldComplaints({
                     className={`${showFilters ? "grid" : "hidden"} grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid md:grid-cols-3`}
                 >
                     <Field label="Status" htmlFor="f_status">
-                        <select
+                        <Select
                             id="f_status"
                             className={fieldCls}
                             value={f.status_id}
@@ -443,7 +411,7 @@ export default function FieldComplaints({
                                     {o.status_name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Received from" htmlFor="f_from">
                         <input
@@ -778,7 +746,7 @@ export default function FieldComplaints({
                                                 htmlFor="category_id"
                                                 error={err("category_id")}
                                             >
-                                                <select
+                                                <Select
                                                     className={fieldCls}
                                                     {...bind("category_id")}
                                                 >
@@ -801,14 +769,14 @@ export default function FieldComplaints({
                                                             </option>
                                                         ),
                                                     )}
-                                                </select>
+                                                </Select>
                                             </Field>
                                             <Field
                                                 label="Priority"
                                                 htmlFor="priority"
                                                 error={err("priority")}
                                             >
-                                                <select
+                                                <Select
                                                     className={fieldCls}
                                                     {...bind("priority")}
                                                 >
@@ -824,7 +792,7 @@ export default function FieldComplaints({
                                                     <option value="urgent">
                                                         Urgent
                                                     </option>
-                                                </select>
+                                                </Select>
                                             </Field>
                                         </div>
                                         <Field
@@ -860,7 +828,7 @@ export default function FieldComplaints({
                                                 htmlFor="received_channel"
                                                 error={err("received_channel")}
                                             >
-                                                <select
+                                                <Select
                                                     className={fieldCls}
                                                     {...bind(
                                                         "received_channel",
@@ -890,7 +858,7 @@ export default function FieldComplaints({
                                                     <option value="other">
                                                         Other
                                                     </option>
-                                                </select>
+                                                </Select>
                                             </Field>
                                             <Field
                                                 label={
@@ -956,7 +924,7 @@ export default function FieldComplaints({
                                                 htmlFor="province_id"
                                                 error={err("province_id")}
                                             >
-                                                <select
+                                                <Select
                                                     className={fieldCls}
                                                     {...bind("province_id")}
                                                 >
@@ -979,7 +947,7 @@ export default function FieldComplaints({
                                                             </option>
                                                         ),
                                                     )}
-                                                </select>
+                                                </Select>
                                             </Field>
                                             <Field
                                                 label="Municipality or city"

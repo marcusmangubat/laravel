@@ -1,4 +1,5 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Field, Req, Select, fieldCls } from "@/Components/form-controls";
 import {
     CornerLeftUp,
     Mail,
@@ -40,30 +41,6 @@ type Filters = {
     is_active: string;
     can_receive: string;
 };
-
-// text-base on mobile stops iOS Safari from zooming into focused inputs
-const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
-
-function Field({
-    label,
-    htmlFor,
-    children,
-}: {
-    label: string;
-    htmlFor: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="min-w-0">
-            <label htmlFor={htmlFor} className={lblCls}>
-                {label}
-            </label>
-            {children}
-        </div>
-    );
-}
 
 //  Page
 export default function Offices({
@@ -195,7 +172,7 @@ export default function Offices({
                     className={`${showFilters ? "grid" : "hidden"} grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid md:grid-cols-4`}
                 >
                     <Field label="Type" htmlFor="f_type">
-                        <select
+                        <Select
                             id="f_type"
                             className={fieldCls}
                             value={f.office_type}
@@ -211,10 +188,10 @@ export default function Offices({
                                     </option>
                                 ),
                             )}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Province" htmlFor="f_province">
-                        <select
+                        <Select
                             id="f_province"
                             className={fieldCls}
                             value={f.province_id}
@@ -231,10 +208,10 @@ export default function Offices({
                                     {p.province_name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Status" htmlFor="f_active">
-                        <select
+                        <Select
                             id="f_active"
                             className={fieldCls}
                             value={f.is_active}
@@ -245,10 +222,10 @@ export default function Offices({
                             <option value="">All</option>
                             <option value="1">Active</option>
                             <option value="0">Inactive</option>
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Assignments" htmlFor="f_assign">
-                        <select
+                        <Select
                             id="f_assign"
                             className={fieldCls}
                             value={f.can_receive}
@@ -259,7 +236,7 @@ export default function Offices({
                             <option value="">All</option>
                             <option value="1">Can receive</option>
                             <option value="0">Cannot receive</option>
-                        </select>
+                        </Select>
                     </Field>
                 </div>
 

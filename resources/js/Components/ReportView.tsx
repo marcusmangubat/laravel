@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Field, Select, fieldCls } from "@/Components/form-controls";
 import type { ReactNode } from "react";
 import { Link } from "@inertiajs/react";
 import {
@@ -65,11 +66,6 @@ export interface ReportViewProps {
     description: ReactNode;
 }
 
-// text-base on phones stops iOS Safari from zooming into focused inputs
-const FIELD =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:border-[#0f3d2e] focus:outline-none focus:ring-4 focus:ring-green-200";
-const LABEL = "mb-1 block text-xs font-semibold text-slate-600";
-
 const STATUS_CLS: Record<string, string> = {
     recorded: "bg-slate-100 text-slate-700",
     for_review: "bg-sky-100 text-sky-800",
@@ -133,26 +129,8 @@ function toParams(filters: Filters, page: number): URLSearchParams {
     return p;
 }
 
-function Field({
-    id,
-    label,
-    children,
-}: {
-    id: string;
-    label: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="min-w-0">
-            <label className={LABEL} htmlFor={id}>
-                {label}
-            </label>
-            {children}
-        </div>
-    );
-}
-
-function Select({
+/** Dropdown fed by an {id, name} list. Wraps the shared animated Select. */
+function OptionSelect({
     id,
     value,
     onChange,
@@ -168,9 +146,8 @@ function Select({
     extra?: ReactNode;
 }) {
     return (
-        <select
+        <Select
             id={id}
-            className={FIELD}
             value={value}
             onChange={(e) => onChange(e.target.value)}
         >
@@ -181,7 +158,7 @@ function Select({
                     {o.name}
                 </option>
             ))}
-        </select>
+        </Select>
     );
 }
 
@@ -409,7 +386,7 @@ export default function ReportView({
                         <input
                             type="search"
                             id="q"
-                            className={`${FIELD} pl-10`}
+                            className={`${fieldCls} pl-10`}
                             placeholder="Search reference, subject or location"
                             value={qInput}
                             onChange={(e) => setQInput(e.target.value)}
@@ -446,29 +423,29 @@ export default function ReportView({
                         filtersOpen ? "grid" : "hidden"
                     } grid-cols-1 gap-3 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
                 >
-                    <Field id="f_from" label="Received from">
+                    <Field htmlFor="f_from" label="Received from">
                         <input
                             type="date"
                             id="f_from"
-                            className={FIELD}
+                            className={fieldCls}
                             value={filters.from}
                             max={filters.to || today}
                             onChange={(e) => set("from")(e.target.value)}
                         />
                     </Field>
-                    <Field id="f_to" label="Received to">
+                    <Field htmlFor="f_to" label="Received to">
                         <input
                             type="date"
                             id="f_to"
-                            className={FIELD}
+                            className={fieldCls}
                             value={filters.to}
                             min={filters.from || undefined}
                             max={today}
                             onChange={(e) => set("to")(e.target.value)}
                         />
                     </Field>
-                    <Field id="f_status" label="Status">
-                        <Select
+                    <Field htmlFor="f_status" label="Status">
+                        <OptionSelect
                             id="f_status"
                             value={filters.status_id}
                             onChange={set("status_id")}
@@ -476,8 +453,8 @@ export default function ReportView({
                             options={statuses}
                         />
                     </Field>
-                    <Field id="f_category" label="Category">
-                        <Select
+                    <Field htmlFor="f_category" label="Category">
+                        <OptionSelect
                             id="f_category"
                             value={filters.category_id}
                             onChange={set("category_id")}
@@ -487,8 +464,8 @@ export default function ReportView({
                     </Field>
                     {admin && (
                         <>
-                            <Field id="f_province" label="Province">
-                                <Select
+                            <Field htmlFor="f_province" label="Province">
+                                <OptionSelect
                                     id="f_province"
                                     value={filters.province_id}
                                     onChange={set("province_id")}
@@ -496,8 +473,8 @@ export default function ReportView({
                                     options={provinces}
                                 />
                             </Field>
-                            <Field id="f_office" label="Office">
-                                <Select
+                            <Field htmlFor="f_office" label="Office">
+                                <OptionSelect
                                     id="f_office"
                                     value={filters.office_id}
                                     onChange={set("office_id")}
@@ -512,10 +489,9 @@ export default function ReportView({
                             </Field>
                         </>
                     )}
-                    <Field id="f_priority" label="Priority">
-                        <select
+                    <Field htmlFor="f_priority" label="Priority">
+                        <Select
                             id="f_priority"
-                            className={FIELD}
                             value={filters.priority}
                             onChange={(e) => set("priority")(e.target.value)}
                         >
@@ -524,18 +500,17 @@ export default function ReportView({
                             <option value="high">High</option>
                             <option value="normal">Normal</option>
                             <option value="low">Low</option>
-                        </select>
+                        </Select>
                     </Field>
-                    <Field id="f_overdue" label="Overdue">
-                        <select
+                    <Field htmlFor="f_overdue" label="Overdue">
+                        <Select
                             id="f_overdue"
-                            className={FIELD}
                             value={filters.overdue}
                             onChange={(e) => set("overdue")(e.target.value)}
                         >
                             <option value="">All</option>
                             <option value="1">Overdue only</option>
-                        </select>
+                        </Select>
                     </Field>
                 </div>
 

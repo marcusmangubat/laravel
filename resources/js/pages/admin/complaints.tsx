@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Field, Req, Select, fieldCls } from "@/Components/form-controls";
 import {
     AlertCircle,
     CheckCircle2,
@@ -99,39 +100,6 @@ const todayStr = () => {
 };
 const nowLocal = () =>
     `${todayStr()}T${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
-
-// text-base on mobile stops iOS Safari from zooming into focused inputs
-const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
-
-function Field({
-    label,
-    htmlFor,
-    error,
-    hint,
-    children,
-}: {
-    label: ReactNode;
-    htmlFor: string;
-    error?: string;
-    hint?: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="min-w-0">
-            <label htmlFor={htmlFor} className={lblCls}>
-                {label}
-            </label>
-            {children}
-            {hint && !error && (
-                <p className="mt-1 text-xs text-slate-400">{hint}</p>
-            )}
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        </div>
-    );
-}
-const Req = () => <span className="text-red-600"> *</span>;
 
 const locationOf = (r: Complaint) =>
     [r.municipality, r.province_name].filter(Boolean).join(", ") || "Unknown";
@@ -423,7 +391,7 @@ export default function Complaints({
                     className={`${showFilters ? "grid" : "hidden"} grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-6`}
                 >
                     <Field label="Status" htmlFor="f_status">
-                        <select
+                        <Select
                             id="f_status"
                             className={fieldCls}
                             value={f.status_id}
@@ -437,10 +405,10 @@ export default function Complaints({
                                     {o.status_name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Category" htmlFor="f_category">
-                        <select
+                        <Select
                             id="f_category"
                             className={fieldCls}
                             value={f.category_id}
@@ -457,10 +425,10 @@ export default function Complaints({
                                     {o.category_name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Province" htmlFor="f_province">
-                        <select
+                        <Select
                             id="f_province"
                             className={fieldCls}
                             value={f.province_id}
@@ -477,10 +445,10 @@ export default function Complaints({
                                     {o.province_name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Office" htmlFor="f_office">
-                        <select
+                        <Select
                             id="f_office"
                             className={fieldCls}
                             value={f.office_id}
@@ -495,7 +463,7 @@ export default function Complaints({
                                     {o.office_name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Received from" htmlFor="f_from">
                         <input
@@ -851,7 +819,7 @@ export default function Complaints({
                                                 htmlFor="category_id"
                                                 error={err("category_id")}
                                             >
-                                                <select
+                                                <Select
                                                     id="category_id"
                                                     className={fieldCls}
                                                     value={data.category_id}
@@ -881,14 +849,14 @@ export default function Complaints({
                                                             </option>
                                                         ),
                                                     )}
-                                                </select>
+                                                </Select>
                                             </Field>
                                             <Field
                                                 label="Priority"
                                                 htmlFor="priority"
                                                 error={err("priority")}
                                             >
-                                                <select
+                                                <Select
                                                     id="priority"
                                                     className={fieldCls}
                                                     value={data.priority}
@@ -911,7 +879,7 @@ export default function Complaints({
                                                     <option value="urgent">
                                                         Urgent
                                                     </option>
-                                                </select>
+                                                </Select>
                                             </Field>
                                         </div>
                                         <Field
@@ -957,7 +925,7 @@ export default function Complaints({
                                                 htmlFor="received_channel"
                                                 error={err("received_channel")}
                                             >
-                                                <select
+                                                <Select
                                                     id="received_channel"
                                                     className={fieldCls}
                                                     aria-invalid={bad(
@@ -997,7 +965,7 @@ export default function Complaints({
                                                     <option value="other">
                                                         Other
                                                     </option>
-                                                </select>
+                                                </Select>
                                             </Field>
                                             <Field
                                                 label={
@@ -1088,7 +1056,7 @@ export default function Complaints({
                                                 htmlFor="province_id"
                                                 error={err("province_id")}
                                             >
-                                                <select
+                                                <Select
                                                     id="province_id"
                                                     className={fieldCls}
                                                     value={data.province_id}
@@ -1118,7 +1086,7 @@ export default function Complaints({
                                                             </option>
                                                         ),
                                                     )}
-                                                </select>
+                                                </Select>
                                             </Field>
                                             <Field
                                                 label="Municipality or city"

@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Field, Select, fieldCls } from "@/Components/form-controls";
 import {
     AlertCircle,
     Building2,
@@ -10,7 +11,7 @@ import {
     SlidersHorizontal,
     X,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminLayout from "@/layouts/admin-layout";
 
 //  Types (match what UserController sends)
@@ -43,11 +44,6 @@ type Office = {
 
 const serif = { fontFamily: "'DM Serif Display', serif" };
 
-// text-base on mobile stops iOS Safari from zooming into focused inputs
-const fieldCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-green-200 aria-[invalid=true]:border-red-500";
-const lblCls = "mb-1 block text-xs font-semibold text-slate-500";
-
 const fmt = (s: string | null) =>
     s
         ? new Date(s.replace(" ", "T")).toLocaleString("en-PH", {
@@ -71,37 +67,6 @@ function generatePassword(): string {
         if (/[A-Za-z]/.test(p) && /\d/.test(p)) return p;
     }
 }
-
-function Field({
-    label,
-    htmlFor,
-    error,
-    hint,
-    required,
-    children,
-}: {
-    label: string;
-    htmlFor: string;
-    error?: string;
-    hint?: string;
-    required?: boolean;
-    children: ReactNode;
-}) {
-    return (
-        <div className="min-w-0">
-            <label htmlFor={htmlFor} className={lblCls}>
-                {label}
-                {required && <span className="text-red-600"> *</span>}
-            </label>
-            {children}
-            {hint && !error && (
-                <p className="mt-1 text-xs text-slate-400">{hint}</p>
-            )}
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        </div>
-    );
-}
-
 //  Page
 export default function Users({
     users,
@@ -376,7 +341,7 @@ export default function Users({
                     className={`${showFilters ? "grid" : "hidden"} max-w-xl grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:grid`}
                 >
                     <Field label="Office" htmlFor="f_office">
-                        <select
+                        <Select
                             id="f_office"
                             className={fieldCls}
                             value={f.office_id}
@@ -390,10 +355,10 @@ export default function Users({
                                     {officeLabel(o)}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="Status" htmlFor="f_active">
-                        <select
+                        <Select
                             id="f_active"
                             className={fieldCls}
                             value={f.is_active}
@@ -404,7 +369,7 @@ export default function Users({
                             <option value="">All</option>
                             <option value="1">Active</option>
                             <option value="0">Deactivated</option>
-                        </select>
+                        </Select>
                     </Field>
                 </div>
 
@@ -745,7 +710,7 @@ export default function Users({
                                         required
                                         error={err("office_id")}
                                     >
-                                        <select
+                                        <Select
                                             id="office_id"
                                             className={fieldCls}
                                             aria-invalid={bad("office_id")}
@@ -769,7 +734,7 @@ export default function Users({
                                                     {officeLabel(o)}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </Select>
                                     </Field>
 
                                     <Field
