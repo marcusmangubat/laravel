@@ -5,6 +5,7 @@ import {
     Building2,
     CheckCircle2,
     Clock,
+    Inbox,
     Mail,
     Plus,
     Search,
@@ -40,6 +41,20 @@ type Office = {
     office_id: number;
     office_name: string;
     office_code: string | null;
+};
+
+// Pending "Request Access" submissions (from GET /admin/access-requests/pending)
+type PendingRequest = {
+    request_id: number;
+    office_id: number;
+    office_name: string | null;
+    office_code: string | null;
+    full_name: string;
+    username: string;
+    email: string;
+    position_title: string;
+    contact_number: string;
+    created_at: string;
 };
 
 const serif = { fontFamily: "'DM Serif Display', serif" };
@@ -234,7 +249,94 @@ export default function Users({
         setShowPwd(false);
         setOpen(true);
     };
-    const closeForm = () => setOpen(false);
+    // ---- Pending access requests ----
+    const [pending, setPending] = useState<PendingRequest[]>([]);
+    const [reqId, setReqId] = useState<number | null>(null); // set while reviewing a request
+    const [rejecting, setRejecting] = useState(false);
+    const [reason, setReason] = useState("");
+    const [rejectError, setRejectError] = useState<string | null>(null);
+    const [rejectBusy, setRejectBusy] = useState(false);
+
+    const closeForm = () => {
+        setOpen(false);
+        setReqId(null);
+        setRejecting(false);
+        setReason("");
+        setRejectError(null);
+    };
+
+    const [pendingError, setPendingError] = useState<string | null>(null);
+    const loadPending = () => {
+        fetch("/admin/access-requests/pending", {
+            credentials: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        })
+            .then(async (res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json();
+                setPending(json.requests ?? []);
+                setPendingError(null);
+            })
+            .catch((e) =>
+                setPendingError(
+                    `Could not load access requests (${e?.message ?? "error"}). Run php artisan migrate and php artisan route:clear, then reload.`,
+                ),
+            );
+    };
+    useEffect(() => {
+        loadPending();
+    }, []);
+
+    // Open the Create-account modal already filled in with the requester's details
+    const reviewRequest = (r: PendingRequest) => {
+        form.clearErrors();
+        form.setData({
+            office_id: String(r.office_id),
+            full_name: r.full_name,
+            username: r.username,
+            email: r.email,
+            position_title: r.position_title,
+            contact_number: r.contact_number,
+            password: "",
+            password_confirmation: "",
+        });
+        setShowPwd(false);
+        setRejecting(false);
+        setReason("");
+        setRejectError(null);
+        setReqId(r.request_id);
+        setOpen(true);
+    };
+
+    const rejectRequest = () => {
+        if (reqId === null || rejectBusy) return;
+        if (!reason.trim()) {
+            setRejectError("Please give a reason for rejecting.");
+            return;
+        }
+        router.post(
+            `/admin/access-requests/${reqId}/reject`,
+            { reason },
+            {
+                preserveScroll: true,
+                onStart: () => setRejectBusy(true),
+                onFinish: () => setRejectBusy(false),
+                onSuccess: (res) => {
+                    closeForm();
+                    form.reset();
+                    loadPending();
+                    showToast(okMsg(res, "The access request was rejected."));
+                },
+                onError: (errs) =>
+                    setRejectError(
+                        failMsg(errs, "Could not reject the request."),
+                    ),
+            },
+        );
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -251,11 +353,17 @@ export default function Users({
         e.preventDefault();
         if (form.processing) return;
         const name = data.full_name;
-        form.post("/admin/users", {
+        // A reviewed request is approved through its own endpoint, which also
+        // marks the request as approved. Otherwise it's a normal new account.
+        const url = reqId
+            ? `/admin/access-requests/${reqId}/approve`
+            : "/admin/users";
+        form.post(url, {
             preserveScroll: true,
             onSuccess: (res) => {
                 closeForm();
                 form.reset();
+                loadPending();
                 showToast(okMsg(res, `Account created for ${name}.`));
             },
             onError: (errs) =>
@@ -290,6 +398,61 @@ export default function Users({
     return (
         <AdminLayout title="Field Office Accounts">
             <Head title="DENR RDAC IV-A – Field Office Accounts" />
+
+            {/* Pending access requests */}
+            {pendingError && (
+                <div
+                    role="alert"
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                    {pendingError}
+                </div>
+            )}
+            {pending.length > 0 && (
+                <section
+                    aria-labelledby="pendingTitle"
+                    className="rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:p-4"
+                >
+                    <h2
+                        id="pendingTitle"
+                        className="flex items-center gap-2 text-sm font-semibold text-amber-900"
+                    >
+                        <Inbox className="h-4 w-4" />
+                        Pending access requests
+                        <span className="rounded-full bg-amber-600 px-2 py-0.5 text-xs leading-none text-white">
+                            {pending.length}
+                        </span>
+                    </h2>
+                    <ul className="mt-3 divide-y divide-amber-100 overflow-hidden rounded-xl border border-amber-200 bg-white">
+                        {pending.map((r) => (
+                            <li
+                                key={r.request_id}
+                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                            >
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-slate-800">
+                                        {r.full_name}
+                                    </p>
+                                    <p className="truncate text-xs text-slate-500">
+                                        {r.office_name || "—"} · {r.username} ·{" "}
+                                        {r.email}
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                        Requested {fmt(r.created_at)}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => reviewRequest(r)}
+                                    className="w-full rounded-xl bg-[#15803d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f3d2e] focus:ring-4 focus:ring-green-200 focus:outline-none sm:w-auto"
+                                >
+                                    Review
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
 
             {/* Toolbar */}
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
@@ -669,7 +832,9 @@ export default function Users({
                                     className="text-lg text-[#0f3d2e] sm:text-xl"
                                     style={serif}
                                 >
-                                    Create a field-office account
+                                    {reqId
+                                        ? "Review access request"
+                                        : "Create a field-office account"}
                                 </h2>
                                 <button
                                     type="button"
@@ -697,12 +862,22 @@ export default function Users({
                                                 "Please fix the highlighted fields."}
                                         </div>
                                     )}
-                                    <p className="text-sm text-slate-500">
-                                        This person will sign in to the
-                                        field-office workspace for the office
-                                        you choose. They must change the
-                                        temporary password at first sign-in.
-                                    </p>
+                                    {reqId ? (
+                                        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            These details were submitted by the
+                                            requester. Check or correct them,
+                                            then set a temporary password and
+                                            approve to create the account.
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-slate-500">
+                                            This person will sign in to the
+                                            field-office workspace for the
+                                            office you choose. They must change
+                                            the temporary password at first
+                                            sign-in.
+                                        </p>
+                                    )}
 
                                     <Field
                                         label="Office"
@@ -927,6 +1102,41 @@ export default function Users({
                                             Show passwords
                                         </label>
                                     </div>
+
+                                    {reqId && rejecting && (
+                                        <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
+                                            <Field
+                                                label="Reason for rejecting"
+                                                htmlFor="reject_reason"
+                                                required
+                                                error={rejectError ?? undefined}
+                                            >
+                                                <textarea
+                                                    id="reject_reason"
+                                                    rows={2}
+                                                    maxLength={500}
+                                                    className={fieldCls}
+                                                    value={reason}
+                                                    onChange={(e) => {
+                                                        setReason(
+                                                            e.target.value,
+                                                        );
+                                                        setRejectError(null);
+                                                    }}
+                                                />
+                                            </Field>
+                                            <button
+                                                type="button"
+                                                onClick={rejectRequest}
+                                                disabled={rejectBusy}
+                                                className="rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-60"
+                                            >
+                                                {rejectBusy
+                                                    ? "Rejecting..."
+                                                    : "Confirm rejection"}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Sticky action bar so the submit button is always reachable on phones */}
@@ -938,6 +1148,17 @@ export default function Users({
                                     >
                                         Cancel
                                     </button>
+                                    {reqId && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setRejecting((v) => !v)
+                                            }
+                                            className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+                                        >
+                                            Reject
+                                        </button>
+                                    )}
                                     <button
                                         type="submit"
                                         disabled={form.processing}
@@ -945,7 +1166,9 @@ export default function Users({
                                     >
                                         {form.processing
                                             ? "Saving..."
-                                            : "Create account"}
+                                            : reqId
+                                              ? "Approve & create account"
+                                              : "Create account"}
                                     </button>
                                 </div>
                             </form>

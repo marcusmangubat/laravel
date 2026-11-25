@@ -18,6 +18,8 @@ use App\Http\Controllers\Field\FieldComplaintController;
 use App\Http\Controllers\Field\ReportController as FieldReportController;
 use App\Http\Controllers\Field\SettingsController;
 use App\Http\Controllers\Admin\EmailAccountController;
+use App\Http\Controllers\Auth\AccessRequestController as PublicAccessRequestController;
+use App\Http\Controllers\Admin\AccessRequestController as AdminAccessRequestController;
 
 // Global route patterns
 // {id} only matches numbers (must be declared before the routes that use it)
@@ -37,6 +39,14 @@ Route::middleware(['nocache', 'guest'])->group(function () {
     Route::post('/login', [LoginController::class, 'login'])
         ->middleware('throttle:5,1')
         ->name('login.submit');
+
+    // Request access (public form for field-office staff)
+    Route::get('/request-access', [PublicAccessRequestController::class, 'create'])
+        ->name('access.request');
+
+    Route::post('/request-access', [PublicAccessRequestController::class, 'store'])
+        ->middleware('throttle:5,10')
+        ->name('access.request.store');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])
@@ -45,7 +55,7 @@ Route::post('/logout', [LoginController::class, 'logout'])
 
 // Password reset
 Route::post('/password/reset', [PasswordResetController::class, 'handle'])
-    ->middleware(['guest', 'throttle:10,1'])
+    ->middleware(['guest', 'throttle:password-reset'])
     ->name('password.reset.handle');
 
 /*
@@ -183,6 +193,14 @@ Route::middleware(['auth', 'nocache', 'admin'])->prefix('admin')->group(function
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
     Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
     Route::patch('/users/{id}/status', [UserController::class, 'updateStatus'])->name('admin.users.status');
+
+    // Access requests (review, approve, reject)
+    Route::get('/access-requests/pending', [AdminAccessRequestController::class, 'pending'])
+        ->name('admin.access-requests.pending');
+    Route::post('/access-requests/{id}/approve', [AdminAccessRequestController::class, 'approve'])
+        ->name('admin.access-requests.approve');
+    Route::post('/access-requests/{id}/reject', [AdminAccessRequestController::class, 'reject'])
+        ->name('admin.access-requests.reject');
 
         // Audit trail
     Route::get('/audit', [AuditController::class, 'index'])

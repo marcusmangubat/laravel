@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { router, usePage } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import axios from "axios";
 
 export default function Login() {
@@ -15,6 +15,7 @@ export default function Login() {
     const [rConfirm, setRConfirm] = useState("");
     const [showNew, setShowNew] = useState(false);
     const [rBusy, setRBusy] = useState(false);
+    const [resendIn, setResendIn] = useState(0);
     const [rMsg, setRMsg] = useState<{
         kind: "ok" | "err";
         text: string;
@@ -60,14 +61,30 @@ export default function Login() {
             return data as { ok: boolean; message?: string };
         } catch (err: any) {
             const d = err?.response?.data;
+            const status = err?.response?.status;
+            const retryAfter = Number(err?.response?.headers?.["retry-after"]);
+            if (
+                status === 429 &&
+                (fields.action === "request" || fields.action === "resend")
+            ) {
+                setResendIn(
+                    Number.isFinite(retryAfter) && retryAfter > 0
+                        ? retryAfter
+                        : 60,
+                );
+            }
             const first = d?.errors
                 ? (Object.values(d.errors)[0] as string[])[0]
                 : null;
+            const message =
+                status === 429 && !/please wait/i.test(d?.message ?? "")
+                    ? `Too many requests. Try again in ${retryAfter > 0 ? retryAfter : 60} seconds.`
+                    : d?.message;
             setRMsg({
                 kind: "err",
                 text:
                     first ||
-                    d?.message ||
+                    message ||
                     "The request could not be completed.",
             });
             return null;
@@ -93,6 +110,15 @@ export default function Login() {
     }
 
     useEffect(() => {
+        if (resendIn <= 0) return;
+        const timer = window.setTimeout(
+            () => setResendIn((seconds) => Math.max(0, seconds - 1)),
+            1000,
+        );
+        return () => window.clearTimeout(timer);
+    }, [resendIn]);
+
+    useEffect(() => {
         const id = flash?.force_reset;
         if (!id || autoStarted.current) return;
         autoStarted.current = true; // prevents a double email in React StrictMode (dev)
@@ -104,6 +130,7 @@ export default function Login() {
 
         void resetPost({ action: "request", identifier: id }).then((d) => {
             if (d?.ok) {
+                setResendIn(60);
                 setStep("code");
                 setRMsg({
                     kind: "ok",
@@ -116,6 +143,7 @@ export default function Login() {
     }, [flash?.force_reset]);
 
     async function sendCode(identifier: string = rIdentifier) {
+        if (rBusy || resendIn > 0) return;
         const id = identifier.trim();
         if (!id) {
             return setRMsg({
@@ -128,6 +156,7 @@ export default function Login() {
             identifier: id,
         });
         if (d?.ok) {
+            setResendIn(60);
             setStep("code");
             setRMsg({ kind: "ok", text: d.message ?? "Code sent." });
         }
@@ -443,15 +472,24 @@ export default function Login() {
                                 </button>
                             </form>
 
-                            <p className="mt-6 text-center">
+                            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
                                 <button
                                     type="button"
                                     onClick={openReset}
-                                    className="text-sm font-semibold text-green-700 hover:underline"
+                                    className="font-semibold text-green-700 hover:underline"
                                 >
                                     Change password
                                 </button>
-                            </p>
+                                <span aria-hidden className="text-gray-300">
+                                    |
+                                </span>
+                                <Link
+                                    href="/request-access"
+                                    className="font-semibold text-green-700 hover:underline"
+                                >
+                                    Request access
+                                </Link>
+                            </div>
                         </>
                     )}
                     <p className="mt-8 text-center text-xs text-gray-400">
@@ -498,12 +536,14 @@ export default function Login() {
                                     <button
                                         type="button"
                                         onClick={() => sendCode()}
-                                        disabled={rBusy}
+                                        disabled={rBusy || resendIn > 0}
                                         className="mt-5 w-full rounded-lg bg-green-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:opacity-60"
                                     >
                                         {rBusy
                                             ? "Sending..."
-                                            : "Send verification code"}
+                                            : resendIn > 0
+                                              ? `Please wait ${resendIn}s`
+                                              : "Send verification code"}
                                     </button>
                                 </div>
                             )}
@@ -550,10 +590,12 @@ export default function Login() {
                                         <button
                                             type="button"
                                             onClick={() => sendCode()}
-                                            disabled={rBusy}
+                                            disabled={rBusy || resendIn > 0}
                                             className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-60"
                                         >
-                                            Send a new code
+                                            {resendIn > 0
+                                                ? `Send a new code in ${resendIn}s`
+                                                : "Send a new code"}
                                         </button>
                                     </p>
                                 </div>

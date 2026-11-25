@@ -74,7 +74,7 @@ class PasswordResetController extends Controller
             return $this->fail(
                 'Please wait a minute before requesting another code.',
                 429
-            );
+            )->header('Retry-After', (string) self::RESEND_COOLDOWN);
         }
 
         $code = (string) random_int(100000, 999999);
