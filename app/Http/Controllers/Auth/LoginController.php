@@ -91,12 +91,12 @@ class LoginController extends Controller
             'locked_until' => null,
         ])->save();
 
-        // 10. Redirect based on the account's role
-        return redirect()->route(
+        // 10. Redirect based on the account's role (full page load)
+        return Inertia::location(route(
             $user->role === 'admin'
                 ? 'admin.dashboard'
                 : 'field.dashboard'
-        );
+        ));
     }
 
     // Log out
