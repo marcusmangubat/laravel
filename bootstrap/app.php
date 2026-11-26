@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
@@ -17,12 +18,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        // Trust Render reverse proxy to recognize HTTPS requests
+        $middleware->trustProxies(at: '*');
+
+        // Custom middleware aliases
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'field' => EnsureFieldOffice::class,
             'nocache' => PreventBackHistory::class,
         ]);
 
+        // Web middleware
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
