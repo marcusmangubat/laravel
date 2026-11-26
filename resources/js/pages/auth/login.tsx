@@ -82,10 +82,7 @@ export default function Login() {
                     : d?.message;
             setRMsg({
                 kind: "err",
-                text:
-                    first ||
-                    message ||
-                    "The request could not be completed.",
+                text: first || message || "The request could not be completed.",
             });
             return null;
         } finally {
@@ -483,12 +480,12 @@ export default function Login() {
                                 <span aria-hidden className="text-gray-300">
                                     |
                                 </span>
-                                <Link
+                                <a
                                     href="/request-access"
                                     className="font-semibold text-green-700 hover:underline"
                                 >
                                     Request access
-                                </Link>
+                                </a>
                             </div>
                         </>
                     )}
