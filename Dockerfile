@@ -21,7 +21,13 @@ RUN docker-php-ext-configure gd \
 
 RUN docker-php-ext-install -j"$(nproc)" \
     bcmath curl gd intl mbstring \
-    pdo_mysql pcntl zip 
+    pdo_mysql pcntl zip
+
+# Install XML extensions separately to avoid dependency build conflicts
+RUN docker-php-ext-install dom
+
+RUN docker-php-ext-install \
+    simplexml xml xmlreader xmlwriter
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -46,9 +52,10 @@ RUN php artisan package:discover --ansi
 # Stage 2: Build React / Vite Plus assets
 FROM php-build AS frontend-build
 
-COPY --from=node:22-bookworm-slim /usr/local/ /usr/local/
+COPY --from=node:22-bookworm-slim /usr/local/ /opt/node/
+ENV PATH="/opt/node/bin:${PATH}"
 
-RUN node --version && npm --version
+RUN php --version && node --version && npm --version
 
 RUN npm ci
 
@@ -63,9 +70,6 @@ RUN apt-get update && apt-get install -y \
     libicu72 libzip4 libpng16-16 \
     libjpeg62-turbo libfreetype6 \
     libonig5 libcurl4 libxml2 libstdc++6 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y \
     $PHPIZE_DEPS \
     libicu-dev libzip-dev libpng-dev \
     libjpeg62-turbo-dev libfreetype6-dev \
@@ -76,6 +80,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath curl gd intl mbstring \
         pdo_mysql pcntl zip \
+    && docker-php-ext-install dom \
+    && docker-php-ext-install simplexml xml xmlreader xmlwriter \
     && apt-get purge -y --auto-remove \
         $PHPIZE_DEPS \
         libicu-dev libzip-dev libpng-dev \
