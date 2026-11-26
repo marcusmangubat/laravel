@@ -27,7 +27,7 @@ RUN docker-php-ext-install -j"$(nproc)" \
 RUN docker-php-ext-install dom
 
 RUN docker-php-ext-install \
-    simplexml xml xmlreader xmlwriter
+    simplexml xml xmlwriter
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -81,7 +81,7 @@ RUN apt-get update && apt-get install -y \
         bcmath curl gd intl mbstring \
         pdo_mysql pcntl zip \
     && docker-php-ext-install dom \
-    && docker-php-ext-install simplexml xml xmlreader xmlwriter \
+    && docker-php-ext-install simplexml xml xmlwriter \
     && apt-get purge -y --auto-remove \
         $PHPIZE_DEPS \
         libicu-dev libzip-dev libpng-dev \
