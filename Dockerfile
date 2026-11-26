@@ -21,8 +21,7 @@ RUN docker-php-ext-configure gd \
 
 RUN docker-php-ext-install -j"$(nproc)" \
     bcmath curl gd intl mbstring \
-    pdo_mysql pcntl zip \
-    dom simplexml xml xmlreader xmlwriter
+    pdo_mysql pcntl zip 
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -81,7 +80,6 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath curl gd intl mbstring \
         pdo_mysql pcntl zip \
-        dom simplexml xml xmlreader xmlwriter \
     && apt-get purge -y --auto-remove \
         $PHPIZE_DEPS \
         libicu-dev libzip-dev libpng-dev \
