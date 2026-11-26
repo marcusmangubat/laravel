@@ -44,17 +44,13 @@ RUN php artisan package:discover --ansi
 
 
 # Stage 2: Build React / Vite Plus assets
-FROM node:22-bookworm-slim AS frontend-build
+FROM php-build AS frontend-build
 
-WORKDIR /var/www/html
+COPY --from=node:22-bookworm-slim /usr/local/ /usr/local/
 
-COPY --from=php-build /var/www/html /var/www/html
-
-COPY package.json package-lock.json ./
+RUN node --version && npm --version
 
 RUN npm ci
-
-COPY . .
 
 RUN npm run build
 
